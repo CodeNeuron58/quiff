@@ -1,14 +1,14 @@
-# Lesto
+# Quiff
 
-*Computer use at the speed of thought.*
+*Fast hands for your AI.*
 
-Lesto is an open-source engine that drives Windows desktop apps and Chrome quickly. It reads the screen as structured data (the accessibility tree and the DOM) instead of screenshots. A small decision model picks each action, flows it has done before are replayed with no model call at all, and a large frontier model is called only when the engine is unsure.
+Quiff is an engine that drives Windows desktop apps and Chrome quickly. It reads the screen as structured data (the accessibility tree and the DOM) instead of screenshots. A small decision model picks each action, flows it has done before are replayed with no model call at all, and a large frontier model is called only when the engine is unsure.
 
 > **Status: pre-alpha.** Nothing works end to end yet. Scope for now is Windows and Chrome only.
 
 ## Why
 
-Today's computer-use agents are slow because a large model thinks before and after every click, not because clicking is slow. In the OSWorld-Human study (MLSys 2026), large-model calls took 90–97% of agent time, and seeing and clicking took under 10%. Lesto removes most of those calls from the routine path.
+Today's computer-use agents are slow because a large model thinks before and after every click, not because clicking is slow. In the OSWorld-Human study (MLSys 2026), large-model calls took 90–97% of agent time, and seeing and clicking took under 10%. Quiff removes most of those calls from the routine path.
 
 ## How it works
 
@@ -29,8 +29,8 @@ The frontier model is called again only on low confidence, a failed check, or a 
 ## Project layout
 
 ```
-src/lesto/
-├── cli.py            command-line entry point (`lesto`)
+src/quiff/
+├── cli.py            command-line entry point (`quiff`)
 ├── loop.py           the per-step fast loop
 ├── plan.py           planning and escalation to the frontier model
 ├── observe/          stage 1: screen → action table
@@ -53,8 +53,8 @@ src/lesto/
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```sh
-uv sync        # create .venv and install Lesto in editable mode
-uv run lesto   # run the CLI
+uv sync        # create .venv and install Quiff in editable mode
+uv run quiff   # run the CLI
 ```
 
 ## Roadmap
@@ -63,4 +63,4 @@ Progress is tracked in [todo.md](todo.md).
 
 ## License
 
-Not chosen yet. Apache 2.0 is planned.
+No license yet, so all rights are reserved. The plan is to publish the engine under Apache 2.0, with a trademark note: the name "Quiff" is not covered by the license, and forks may not use it.
