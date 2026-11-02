@@ -134,3 +134,47 @@ def test_key_spec_and_vk_codes_have_the_same_keys():
     for key in VK_CODES:
         spec = _key_spec(key)
         assert spec[1] == VK_CODES[key], f"{key} vk mismatch: {spec}"
+
+
+# ------------------------------------------------------------- desktop focus safety
+
+class _NotInFrontUser32:
+    """Foreground is always someone else's window (hwnd 2); ours is hwnd 1."""
+
+    def GetForegroundWindow(self):
+        return 2
+
+    def SetForegroundWindow(self, hwnd):
+        return 0
+
+    def keybd_event(self, *args):
+        return None
+
+
+class _OurWindow:
+    def current_hwnd(self):
+        return 1
+
+
+def test_desktop_typing_refuses_when_our_window_is_not_in_front(monkeypatch):
+    from quiff import act as act_mod
+    from quiff.observe import desktop as desktop_mod
+
+    sent = []
+    monkeypatch.setattr(desktop_mod, "user32", _NotInFrontUser32())
+    monkeypatch.setattr(act_mod, "_send_unicode", lambda char: sent.append(char))
+    monkeypatch.setattr(act_mod.time, "sleep", lambda s: None)
+    with pytest.raises(desktop_mod.DesktopError):
+        act_mod._type_text(_OurWindow(), "secret text")
+    with pytest.raises(desktop_mod.DesktopError):
+        act_mod._require_foreground(_OurWindow())
+    assert sent == []  # not one character reached another window
+
+
+def test_browser_observer_picks_its_own_port_by_default():
+    from quiff.observe.browser import BrowserObserver
+
+    auto = BrowserObserver(headless=True, chrome_path="chrome.exe")
+    fixed = BrowserObserver(headless=True, chrome_path="chrome.exe", port=9333)
+    assert auto._auto_port and auto.port == 0       # Chrome chooses; never 9222 by default
+    assert not fixed._auto_port and fixed.port == 9333

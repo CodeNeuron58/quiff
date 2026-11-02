@@ -16,6 +16,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 from websockets.asyncio.client import connect
 from websockets.exceptions import WebSocketException
@@ -241,16 +242,21 @@ class BrowserObserver:
         self,
         *,
         headless: bool = False,
-        port: int = 9222,
+        port: int | None = None,
         chrome_path: str | None = None,
         window_size: str = "1280,900",
         direct: bool = True,
     ) -> None:
         """direct=True bypasses the system proxy entirely: the machine's proxy
-        was intercepting even 127.0.0.1 and intermittently breaking pages."""
+        was intercepting even 127.0.0.1 and intermittently breaking pages.
+
+        port=None (the default) lets Chrome pick a free port and write it into
+        our own temporary profile, so Quiff can only ever attach to the Chrome
+        it launched, never to another debug Chrome that happens to be on 9222."""
         self.headless = headless
         self.direct = direct
-        self.port = port
+        self._auto_port = not port
+        self.port = port or 0
         self.window_size = window_size
         self._chrome = chrome_path or os.environ.get("QUIFF_CHROME") or _find_chrome()
         self._process: subprocess.Popen | None = None
@@ -412,6 +418,8 @@ class BrowserObserver:
         if self._user_data_dir:
             shutil.rmtree(self._user_data_dir, ignore_errors=True)
             self._user_data_dir = None
+        if self._auto_port:
+            self.port = 0  # the next start picks a fresh port
 
     def start(self) -> None:
         if self._process:
@@ -443,6 +451,20 @@ class BrowserObserver:
 
     async def _wait_for_debugger(self, timeout: float = 20.0) -> None:
         deadline = time.monotonic() + timeout
+        if self._auto_port:
+            # Chrome writes the port it picked into OUR profile: no guessing,
+            # no attaching to someone else's browser
+            active = Path(self._user_data_dir or "") / "DevToolsActivePort"
+            while time.monotonic() < deadline:
+                try:
+                    first_line = active.read_text(encoding="utf-8").splitlines()[0]
+                    self.port = int(first_line.strip())
+                    break
+                except (OSError, ValueError, IndexError):
+                    await asyncio.sleep(0.1)
+            else:
+                raise BrowserError("Chrome did not report its debugging port within "
+                                   f"{timeout:.0f}s")
         url = f"http://127.0.0.1:{self.port}/json/version"
         while time.monotonic() < deadline:
             try:
