@@ -14,7 +14,7 @@ from typing import Sequence
 
 import re
 
-from .act import ActResult, act, needs_approval
+from .act import ActResult, act, focus_info, needs_approval, parse_combo
 from .decide import Decision, Decider
 from .learn import StepLogger
 from .observe.browser import BrowserObserver
@@ -66,6 +66,7 @@ class FastLoop:
         rescuer: Decider | None = None,
         approver=None,
         verify_after_done=None,
+        write_root=None,
     ) -> None:
         self.observer = observer
         self.decider = decider
@@ -74,6 +75,9 @@ class FastLoop:
         self.rescuer = rescuer
         self.approver = approver
         self.verify_after_done = verify_after_done
+        self.write_root = write_root
+        """The folder the task may write NEW files into without asking (the
+        sandbox); saving anywhere else, or overwriting, needs approval."""
         """async callable -> (passed, feedback); lets the referee correct the
         model once when it declares done but the checks disagree."""
         """async callable (reason) -> bool; the only way past the approval guard."""
@@ -207,7 +211,14 @@ class FastLoop:
                 self._log(step_no, decision, None, table, decide_ms, observe_ms)
                 break
 
-            approval_reason = needs_approval(decision, table)
+            focus = None
+            if decision.action == "press":
+                mods, keys = parse_combo(decision.values)
+                if not mods and keys in ((), ("enter",), ("space",), ("delete",)):
+                    # what the key lands on decides what it does
+                    focus = await focus_info(self.observer)
+            approval_reason = needs_approval(decision, table, focus=focus,
+                                             write_root=self.write_root)
             if approval_reason:
                 approved = False
                 if self.approver is not None:

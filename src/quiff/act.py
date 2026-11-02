@@ -9,20 +9,41 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import re
 import time
 from pathlib import Path
 from dataclasses import dataclass
 
 from .decide import Decision
 from .observe.browser import BrowserError, BrowserObserver, is_session_drop
-from .observe.table import ActionRow
+from .observe.table import ActionRow, ActionTable
 
 # Words that make an action irreversible; the user must approve before it runs.
+# Matched as whole words, so "Postal code", "PayPal" and "Deleted items" pass.
 RISKY_WORDS = ("send", "pay", "submit", "delete", "remove", "erase", "uninstall",
-               "purchase", "post", "approve", "transfer", "confirm",
-               "place order", "checkout")
-# Keyboard shortcuts that trigger the same words (e.g. Ctrl+Enter sends in Outlook).
-RISKY_KEYS = ("ctrl+enter", "ctrl+d", "shift+delete")
+               "purchase", "buy", "post", "publish", "approve", "transfer", "confirm",
+               "place order", "checkout", "check out")
+RISKY_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(word).replace(r"\ ", r"\s+") for word in RISKY_WORDS) + r")\b",
+    re.IGNORECASE,
+)
+# Keyboard shortcuts that commit something (Ctrl+Enter / Alt+S send mail in
+# Outlook; Shift+Delete deletes permanently), in the canonical parse_combo form.
+RISKY_COMBOS = {"ctrl+enter", "alt+s", "ctrl+d", "shift+delete", "ctrl+shift+delete"}
+# Controls where typing or ticking can't commit anything by itself.
+ENTRY_ROLES = {"textbox", "searchbox", "edit", "document", "combobox", "combo box",
+               "spinbutton", "spinner", "text", "statictext", "slider"}
+TOGGLE_ROLES = {"checkbox", "check box", "radio", "radio button", "switch",
+                "toggle switch", "menuitemcheckbox", "menuitemradio"}
+
+MODIFIER_ORDER = ("ctrl", "alt", "shift", "meta")
+KEY_ALIASES = {
+    "control": "ctrl", "ctl": "ctrl", "option": "alt", "cmd": "meta", "command": "meta",
+    "win": "meta", "windows": "meta", "super": "meta",
+    "return": "enter", "esc": "escape", "del": "delete", "spacebar": "space",
+    "up": "arrowup", "down": "arrowdown", "left": "arrowleft", "right": "arrowright",
+    "pgup": "pageup", "pgdn": "pagedown", "ins": "insert",
+}
 
 
 @dataclass
@@ -33,25 +54,170 @@ class ActResult:
     ms: int = 0
 
 
-def needs_approval(decision: Decision, table: ActionTable) -> str | None:
-    """Why this decision needs a human's approval, or None if it is routine."""
+@dataclass(frozen=True)
+class Focus:
+    """What currently holds keyboard focus: decides what Enter or Space would do."""
+    role: str
+    name: str
+    form_submits: tuple[str, ...] = ()  # browser: submit buttons of the focused field's form
+
+
+def parse_combo(values) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """One canonical reading of a key press, shared by the guard and both keyboards.
+
+    "ctrl + enter", "Enter+Ctrl", ["ctrl", "enter"] and "control return" all
+    become (("ctrl",), ("enter",)): the guard checks exactly what gets pressed.
+    """
+    if isinstance(values, str):
+        values = [values]
+    tokens: list[str] = []
+    for chunk in "+".join(str(v) for v in values).split("+"):
+        chunk = chunk.strip().lower()
+        if not chunk:
+            continue
+        squashed = KEY_ALIASES.get(re.sub(r"[\s_-]+", "", chunk), re.sub(r"[\s_-]+", "", chunk))
+        if squashed in VK_CODES or squashed in MODIFIER_ORDER or len(squashed) == 1:
+            tokens.append(squashed)
+        else:  # e.g. "ctrl enter" written as one value
+            tokens.extend(KEY_ALIASES.get(part, part) for part in chunk.split())
+    mods = tuple(m for m in MODIFIER_ORDER if m in tokens)
+    keys = tuple(t for t in tokens if t not in MODIFIER_ORDER)
+    return mods, keys
+
+
+def combo_label(values) -> str:
+    """The canonical 'mod+mod+key' string for a press; defaults to Enter."""
+    mods, keys = parse_combo(values)
+    return "+".join(mods + keys) or "enter"
+
+
+def _risky_name(name: str) -> bool:
+    return bool(RISKY_PATTERN.search(name or ""))
+
+
+def _commits(role: str) -> bool:
+    """True for controls whose activation can commit something (buttons, links, menu items)."""
+    role = (role or "").lower()
+    return role not in ENTRY_ROLES and role not in TOGGLE_ROLES
+
+
+def needs_approval(decision: Decision, table: ActionTable, focus: Focus | None = None,
+                   write_root: Path | None = None) -> str | None:
+    """Why this decision needs a human's approval, or None if it is routine.
+
+    `focus` says what Enter/Space/Delete would land on (None = unknown, judged
+    conservatively); `write_root` is the folder the task may write new files
+    into without asking (the sandbox)."""
     if decision.action == "download":
         # the model chose where to write on disk — always a human decision
         return "download to " + (" ".join(decision.values) or "an unspecified path")
+    if decision.action == "save_as":
+        return _save_as_risk(" ".join(decision.values), write_root)
     if decision.action == "press":
-        key = "+".join(str(v).strip() for v in decision.values).lower()
-        if any(key.endswith(risky) for risky in RISKY_KEYS):
-            return f"keyboard shortcut {key}"
-        return None
-    if decision.row is None:
-        return None
+        return _press_risk(decision, table, focus)
+    if decision.action not in ("click", "select") or decision.row is None:
+        return None  # typing into a field commits nothing by itself
     row = table.by_index(decision.row)
     if row is None:
         return None
-    label = f"{row.role} {row.name}".lower()
-    if any(risky in label for risky in RISKY_WORDS):
+    if decision.action == "select":
+        option = " ".join(decision.values)
+        if _risky_name(option):
+            return f"choose \"{option}\" in {row.role} \"{row.name}\""
+        return None
+    if _commits(row.role) and _risky_name(row.name):
         return f"{row.role} \"{row.name}\""
     return None
+
+
+def _press_risk(decision: Decision, table: ActionTable, focus: Focus | None) -> str | None:
+    mods, keys = parse_combo(decision.values)
+    if not mods and not keys:
+        keys = ("enter",)  # an empty press is pressed as Enter, so judge it as Enter
+    combo = "+".join(mods + keys)
+    if combo in RISKY_COMBOS:
+        return f"keyboard shortcut {combo}"
+    if mods or len(keys) != 1:
+        return None
+    key = keys[0]
+    if key == "delete" and table.url is None:  # desktop: Delete removes files and items
+        if focus is not None and focus.role.lower() in ENTRY_ROLES:
+            return None  # deleting characters inside a text box
+        return "Delete key" + (f" on {focus.role} \"{focus.name}\"" if focus else "")
+    if key not in ("enter", "space"):
+        return None
+    if focus is None:
+        # can't tell what the key lands on: ask if anything risky is on screen
+        risky = next((r for r in table.rows if _commits(r.role) and _risky_name(r.name)), None)
+        return f"{key} while {risky.role} \"{risky.name}\" is on screen" if risky else None
+    if _commits(focus.role) and _risky_name(focus.name):
+        return f"{key} on {focus.role} \"{focus.name}\""
+    if key == "enter" and focus.role.lower() in ENTRY_ROLES:
+        submit = next((name for name in focus.form_submits if _risky_name(name)), None)
+        if submit:
+            return f"Enter would submit the form (\"{submit}\")"
+    return None
+
+
+def _save_as_risk(path_text: str, write_root: Path | None) -> str | None:
+    if not path_text.strip():
+        return "save to an unspecified path"
+    target = Path(path_text).expanduser()
+    if target.exists():
+        return f"overwrite {target}"
+    if write_root is None:
+        return f"save to {target}"
+    try:
+        target.resolve().relative_to(Path(write_root).resolve())
+    except ValueError:
+        return f"save to {target} (outside the task folder)"
+    return None
+
+
+async def focus_info(observer) -> Focus | None:
+    """What holds keyboard focus right now; None when it can't be determined."""
+    try:
+        if hasattr(observer, "connection"):  # browser
+            result = await observer.call("Runtime.evaluate", expression=_FOCUS_JS,
+                                         returnByValue=True)
+            value = (result.get("result") or {}).get("value")
+            if not value:
+                return None
+            return Focus(role=value.get("role", ""), name=value.get("name", ""),
+                         form_submits=tuple(value.get("submits") or ()))
+        from .observe.desktop import uia
+
+        element = uia.GetFocusedElement()
+        if element is None:
+            return None
+        return Focus(role=(element.CurrentLocalizedControlType or "").lower(),
+                     name=element.CurrentName or "")
+    except Exception:
+        return None
+
+
+_FOCUS_JS = """(() => {
+  const el = document.activeElement;
+  if (!el || el === document.body) return null;
+  const tag = el.tagName.toLowerCase();
+  const type = (el.type || '').toLowerCase();
+  let role = el.getAttribute('role') || '';
+  if (!role) {
+    if (tag === 'a') role = 'link';
+    else if (tag === 'button' || ['submit', 'button', 'image', 'reset'].includes(type)) role = 'button';
+    else if (tag === 'select') role = 'combobox';
+    else if (['checkbox', 'radio'].includes(type)) role = type;
+    else if (tag === 'textarea' || tag === 'input' || el.isContentEditable) role = 'textbox';
+    else role = tag;
+  }
+  const label = (el.getAttribute('aria-label') || el.innerText || el.value || '').trim();
+  const form = el.form || el.closest('form');
+  const submits = form ? Array.from(form.querySelectorAll('button, input[type=submit], input[type=image]'))
+      .filter(b => (b.type || 'submit').toLowerCase() === 'submit' || b.tagName === 'INPUT')
+      .map(b => (b.innerText || b.value || b.getAttribute('aria-label') || '').trim().slice(0, 80))
+    : [];
+  return {role: role, name: label.slice(0, 80), submits: submits};
+})()"""
 
 
 async def act(observer, table: ActionTable, decision: Decision) -> ActResult:
@@ -101,7 +267,7 @@ async def _act_browser(observer: BrowserObserver, table: ActionTable, decision: 
             return ActResult(ok=False, detail="page changed since the last observation; re-observe")
 
     if decision.action == "press":
-        combo = " ".join(decision.values).strip() or "Enter"
+        combo = combo_label(decision.values)  # the same reading the guard checked
         async def _capture():
             info = await observer.target_info()
             return info.get("url", ""), info.get("title", "")
@@ -390,7 +556,7 @@ VK_CODES = {
     "delete": 0x2E, "insert": 0x2D,
     **{f"f{i}": 0x70 + i - 1 for i in range(1, 13)},  # F1..F12 = 0x70..0x7B
 }
-VK_MODIFIERS = {"ctrl": 0x11, "alt": 0x12, "shift": 0x10, "win": 0x5B}
+VK_MODIFIERS = {"ctrl": 0x11, "alt": 0x12, "shift": 0x10, "win": 0x5B, "meta": 0x5B}
 
 KEYEVENTF_KEYUP = 0x0002
 KEYEVENTF_UNICODE = 0x0004
@@ -400,7 +566,7 @@ INPUT_KEYBOARD = 1
 def _act_desktop(observer, table: ActionTable, decision: Decision) -> ActResult:
     """Accessibility patterns first (Invoke, SetValue...); the keyboard is the fallback."""
     if decision.action == "press":
-        combo = " ".join(decision.values).strip() or "enter"
+        combo = combo_label(decision.values)  # the same reading the guard checked
         before = observer.current_hwnd()
         _press_combo(observer, combo)
         time.sleep(0.4)
@@ -606,6 +772,13 @@ def _save_as(observer, file_path: str) -> ActResult:
     """
     from .observe.desktop import DesktopError
 
+    target = Path(file_path)
+    before_mtime = target.stat().st_mtime if target.exists() else None
+
+    def landed() -> bool:
+        # a file that merely existed before proves nothing: it must be new or rewritten
+        return target.exists() and (before_mtime is None or target.stat().st_mtime > before_mtime)
+
     if not observer.invoke_menu(["File", "Save as"]):
         # fall back to the keyboard shortcut for apps without a File menu
         _press_combo(observer, "ctrl+shift+s")
@@ -614,7 +787,7 @@ def _save_as(observer, file_path: str) -> ActResult:
         # Some apps save silently when the file already has a path; verify by
         # checking the file appears.
         time.sleep(1.0)
-        if Path(file_path).exists():
+        if landed():
             return ActResult(ok=True, detail=f"saved (no dialog): {file_path}")
         return ActResult(ok=False, detail="Save as dialog never appeared")
 
@@ -655,7 +828,7 @@ def _save_as(observer, file_path: str) -> ActResult:
     # the flush can lag the Enter: poll for the file instead of one check
     deadline = time.monotonic() + 4.0
     while time.monotonic() < deadline:
-        if Path(file_path).exists():
+        if landed():
             return ActResult(ok=True, detail=f"saved {file_path}")
         confirm = observer.wait_for_window(title_contains="confirm save as",
                                            timeout=0.0, owned=True)

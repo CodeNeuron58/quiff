@@ -20,8 +20,10 @@ How Chrome exposes itself and how to drive it.
 - **Type into a field**: the type action focuses the field, selects its
   content, and replaces it. The engine verifies the value landed.
 - **Pick from a dropdown**: use select with the option's visible text.
-- **Submit a form**: click the submit button; pressing Enter works only
-  when a field holds focus.
+- **Submit a form**: click the submit button. Irreversible buttons (Submit,
+  Send, Pay, Delete, Place order...) stop and ask the human first, and so
+  does pressing Enter in a form that such a button would submit. Never try
+  to route around the approval.
 - **Download a file**: links to text/plain or inline-served files DISPLAY
   in the page instead of downloading — use the download action with the
   file's URL and the destination path.

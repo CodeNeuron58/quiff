@@ -176,7 +176,8 @@ async def run_task(
         return (not failed), ("; ".join(failed) if failed else "all checks pass")
 
     loop = FastLoop(observer, decider, logger, max_steps=max_steps, rescuer=rescuer,
-                    approver=approver, verify_after_done=verify_after_done)
+                    approver=approver, verify_after_done=verify_after_done,
+                    write_root=sandbox)
     subgoal = "; ".join(planned) if planned else task.goal
     # the app's skill file rides along on every decision: written knowledge
     # of how this app exposes itself, its shared flows, and its quirks
