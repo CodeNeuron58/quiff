@@ -25,6 +25,7 @@ MAX_STEPS = 25
 MAX_WAITS = 5
 MAX_CORRECTIONS = 2
 LOW_CONFIDENCE = 0.5
+MAX_RESCUES = 3  # the slow high-effort model may take at most this many steps per run
 
 
 @dataclass
@@ -46,6 +47,8 @@ class LoopResult:
     stop_reason: str
     answer: str | None = None
     steps_log: list[StepRecord] = field(default_factory=list)
+    model_calls: int = 0  # every request to a model: decisions, retries, rescues (not replay)
+    rescues: int = 0
 
 
 class FastLoop:
@@ -111,67 +114,55 @@ class FastLoop:
         corrected = False
         last_result: str | None = None
         performed: dict[tuple[str, str], int] = {}
+        self._model_calls = 0
+        self._rescues = 0
+        loop_rescued = False
 
         for step_no in range(1, self.max_steps + 1):
             decide_start = time.perf_counter()
             progress = _progress_text(performed)
             try:
-                decision = await self.decider.decide(
-                    goal, subgoal or "", table, history, last_result=last_result,
-                    progress=progress,
-                )
+                decision = await self._ask_decider(goal, subgoal, table, history,
+                                                   last_result, progress)
             except Exception as first_error:
                 # a transient 429/timeout must not kill the run: retry once,
                 # then let the rescuer (a second model) take the step
                 await asyncio.sleep(2.0)
                 try:
-                    decision = await self.decider.decide(
-                        goal, subgoal or "", table, history, last_result=last_result,
-                        progress=progress,
-                    )
+                    decision = await self._ask_decider(goal, subgoal, table, history,
+                                                       last_result, progress)
                 except Exception:
-                    if self.rescuer is None:
+                    if not self._can_rescue():
                         stop_reason = f"decider failed twice: {first_error}"
                         success = False
                         break
                     try:
-                        decision = await self.rescuer.decide(goal, subgoal or "", table,
-                                                             history, last_result=last_result,
-                                                             progress=progress)
-                        decision = replace(decision, note=f"{decision.note} · rescued".strip(" ·"))
+                        decision = await self._ask_rescuer(goal, subgoal, table, history,
+                                                           last_result, progress)
                     except Exception as exc:
                         stop_reason = f"decider and rescuer failed: {first_error} / {exc}"
                         success = False
                         break
             decide_ms = int((time.perf_counter() - decide_start) * 1000)
 
-            if force_rescue or decision.confidence < LOW_CONFIDENCE:
-                if self.rescuer is not None:
-                    try:
-                        decision = await self.rescuer.decide(
-                            goal, subgoal or "", table, history, last_result=last_result
-                        )
-                        decision = replace(
-                            decision, note=f"{decision.note} · rescued".strip(" ·")
-                        )
-                    except Exception as exc:
-                        decision = Decision(action="done", subgoal_done=False, confidence=0.0,
-                                            note=f"rescuer failed: {exc}")
-                force_rescue = False
+            if (force_rescue or decision.confidence < LOW_CONFIDENCE) and self._can_rescue():
+                try:
+                    decision = await self._ask_rescuer(goal, subgoal, table, history,
+                                                       last_result, progress)
+                except Exception as exc:
+                    decision = Decision(action="done", subgoal_done=False, confidence=0.0,
+                                        note=f"rescuer failed: {exc}")
+            force_rescue = False
 
             if decision.action == "wait":
                 # The decider expects a screen that isn't there yet (a dialog
                 # still building); re-observe instead of acting. Past the
-                # budget, keep asking the rescuer to act instead of wait.
+                # budget, ask the rescuer (while its budget lasts) to act instead.
                 waits += 1
-                if waits > MAX_WAITS and self.rescuer is not None:
+                if waits > MAX_WAITS and self._can_rescue():
                     try:
-                        decision = await self.rescuer.decide(
-                            goal, subgoal or "", table, history, last_result=last_result
-                        )
-                        decision = replace(
-                            decision, note=f"{decision.note} · rescued".strip(" ·")
-                        )
+                        decision = await self._ask_rescuer(goal, subgoal, table, history,
+                                                           last_result, progress)
                     except Exception as exc:
                         decision = Decision(action="done", subgoal_done=False, confidence=0.0,
                                             note=f"rescuer failed: {exc}")
@@ -247,7 +238,7 @@ class FastLoop:
             if not result.ok:
                 failed_acts += 1
                 if failed_acts >= 2:
-                    if self.rescuer is not None:
+                    if self._can_rescue():
                         force_rescue = True  # the frontier model picks the next step
                         failed_acts = 0
                     else:
@@ -260,11 +251,12 @@ class FastLoop:
             row = table.by_index(decision.row) if decision.row is not None else None
             ref = row.ref if row is not None else decision.action
             if detector.check(decision.action, ref or "", table.title):
-                if self.rescuer is not None and not force_rescue:
-                    force_rescue = True  # one rescue attempt per detected loop
+                if not loop_rescued and self._can_rescue():
+                    force_rescue = True  # one rescue for the first loop, then stop
+                    loop_rescued = True
                 else:
-                    stop_reason = ("loop detected: the same actions repeat even "
-                                   "after rescue")
+                    stop_reason = ("loop detected: the same action repeats on the same "
+                                   "screen" + (" even after rescue" if loop_rescued else ""))
                     success = False
                     break
 
@@ -280,7 +272,26 @@ class FastLoop:
             elapsed_s=round(elapsed, 2),
             stop_reason=stop_reason,
             answer=answer,
+            model_calls=self._model_calls,
+            rescues=self._rescues,
         )
+
+    def _can_rescue(self) -> bool:
+        return self.rescuer is not None and self._rescues < MAX_RESCUES
+
+    async def _ask_decider(self, goal, subgoal, table, history, last_result, progress):
+        if _is_model(self.decider):
+            self._model_calls += 1  # counted even if the call fails: the request was made
+        return await self.decider.decide(goal, subgoal or "", table, history,
+                                         last_result=last_result, progress=progress)
+
+    async def _ask_rescuer(self, goal, subgoal, table, history, last_result, progress):
+        self._rescues += 1
+        if _is_model(self.rescuer):
+            self._model_calls += 1
+        decision = await self.rescuer.decide(goal, subgoal or "", table, history,
+                                             last_result=last_result, progress=progress)
+        return replace(decision, note=f"{decision.note} · rescued".strip(" ·"))
 
     def _log(
         self,
@@ -316,6 +327,11 @@ class FastLoop:
 SENSITIVE_FIELD = re.compile(
     r"pass(word)?|pwd|otp|secret|token|api[- _]?key|card|cvv|cvc|pin|cc[-_ ]?(num|csc|exp)|credit|ssn|social[- _]security", re.I
 )
+
+
+def _is_model(decider) -> bool:
+    """Replay and scripted deciders cost no model call; wrappers ask their inner decider."""
+    return bool(getattr(decider, "is_model", True))
 
 
 def _progress_text(performed: dict[tuple[str, str], int]) -> str:

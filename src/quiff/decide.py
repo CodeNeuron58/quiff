@@ -76,6 +76,8 @@ class MatchDecider:
     resolved against the current action table when its turn comes.
     """
 
+    is_model = False  # scripted: no model call
+
     def __init__(self, steps: list[MatchStep]) -> None:
         self.steps = steps
         self._next = 0

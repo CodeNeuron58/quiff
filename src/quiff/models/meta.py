@@ -138,13 +138,14 @@ class ChatClient:
         self._http.close()
 
 
-def muse_spark() -> ChatClient:
+def muse_spark(timeout: float = 60.0) -> ChatClient:
     """The Meta Model API decision/frontier client; key from .env (META_API_KEY)."""
     load_env()
     key = os.environ.get("META_API_KEY")
     if not key:
         raise ModelError("META_API_KEY is not set; put it in .env (never in code)")
-    return ChatClient(api_key=key, model=os.environ.get("MUSE_MODEL", "muse-spark-1.3"))
+    return ChatClient(api_key=key, model=os.environ.get("MUSE_MODEL", "muse-spark-1.3"),
+                      timeout=timeout)
 
 
 def muse_spark_open() -> ChatClient:
@@ -239,7 +240,8 @@ class MuseDecider:
     def __init__(self, client: ChatClient | None = None, effort: str = "minimal",
                  max_tokens: int = 2048, allow_wait: bool = True,
                  allow_navigate: bool = True) -> None:
-        self.client = client or muse_spark()
+        # a quick decision that hangs is retried, then rescued: don't wait a minute
+        self.client = client or muse_spark(timeout=20.0 if effort == "minimal" else 60.0)
         self.effort = effort
         self.max_tokens = max_tokens
         self.allow_wait = allow_wait

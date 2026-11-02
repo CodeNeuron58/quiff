@@ -101,6 +101,10 @@ class FlowRecorder:
         self._ran = True
         return decision
 
+    @property
+    def is_model(self) -> bool:
+        return bool(getattr(self.inner, "is_model", True))
+
     def save_if_ran(self, succeeded: bool) -> Path | None:
         if succeeded and self._ran and self.flow.steps:
             return save_flow(self.flow)
@@ -115,6 +119,8 @@ class ReplayDecider:
     wait — the loop re-observes — up to the loop's wait budget. It never skips
     a recorded step: replay either does what was recorded or fails honestly.
     """
+
+    is_model = False  # replay costs no model call
 
     def __init__(self, flow: Flow) -> None:
         self.flow = flow
