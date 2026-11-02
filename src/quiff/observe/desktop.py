@@ -111,6 +111,57 @@ def _window_title(hwnd: int) -> str:
     return buf.value
 
 
+# Windows 11 Notepad keeps every open tab (saved or not) in these files and
+# reopens them on the next launch, inside whatever window opens next.
+NOTEPAD_TAB_STATE = "Packages/Microsoft.WindowsNotepad_8wekyb3d8bbwe/LocalState/TabState"
+
+
+def notepad_tab_state_dir() -> Path | None:
+    base = os.environ.get("LOCALAPPDATA")
+    return Path(base) / NOTEPAD_TAB_STATE if base else None
+
+
+def notepad_tab_files() -> set[str]:
+    """Names of Notepad's saved tab files: the user's unsaved notes live here."""
+    folder = notepad_tab_state_dir()
+    if folder is None or not folder.is_dir():
+        return set()
+    return {path.name for path in folder.glob("*.bin")}
+
+
+def notepad_pids() -> set[int]:
+    """Pids of Notepad processes that have a visible window."""
+    return {
+        pid for pid in (_pid_of(hwnd) for hwnd in _visible_windows())
+        if _process_name(pid).lower() == "notepad.exe"
+    }
+
+
+def _is_notepad(argv: list[str]) -> bool:
+    return bool(argv) and Path(argv[0]).name.lower() == "notepad.exe"
+
+
+def clean_own_notepad_tabs(before: set[str]) -> str:
+    """After Quiff's own Notepad window closed: remove only the tab files that
+    appeared during the run, so the next run's pre-flight starts clean.
+
+    Files that existed before the run are never touched. If any Notepad window
+    is still open, a new file might belong to the user, so nothing is removed.
+    """
+    folder = notepad_tab_state_dir()
+    if folder is None or not folder.is_dir():
+        return ""
+    created = notepad_tab_files() - set(before)
+    if not created:
+        return ""
+    if notepad_pids():
+        return (f"left {len(created)} new Notepad tab file(s) in place: another "
+                "Notepad window is open, so they might be yours")
+    for name in created:
+        (folder / name).unlink(missing_ok=True)
+    return f"removed {len(created)} Notepad tab file(s) this run created"
+
+
 class DesktopObserver:
     """Reads one app's windows into action tables and hands rows to the acting stage.
 
@@ -127,6 +178,10 @@ class DesktopObserver:
         self._launched = False
         self._launch_deadline = 0.0
         self._reattached = False
+        # Notepad tab files present before our launch: cleanup after the run
+        # removes only files OUR window created, never the user's.
+        self._tab_state_before: set[str] | None = None
+        self.cleanup_note = ""
 
     async def open(self, argv: list[str], *, cwd: str | None = None) -> ActionTable:
         """Start a program, wait for its window, and read it.
@@ -142,6 +197,7 @@ class DesktopObserver:
             before = set(_visible_windows())
             self._baseline = before
             self._launched = True
+            self._tab_state_before = notepad_tab_files() if _is_notepad(argv) else None
             self._process = subprocess.Popen(
                 argv, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
@@ -225,6 +281,10 @@ class DesktopObserver:
                 for hwnd in ours:
                     _answer_dont_save(hwnd)
                     user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
+            if self._tab_state_before is not None and not user32.IsWindow(self._root_hwnd):
+                await asyncio.sleep(1.0)  # Notepad writes its session as the window closes
+                self.cleanup_note = clean_own_notepad_tabs(self._tab_state_before)
+            self._tab_state_before = None
         if self._process:
             self._process.terminate()
             try:

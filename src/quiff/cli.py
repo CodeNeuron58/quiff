@@ -135,6 +135,8 @@ async def _dispatch(args: argparse.Namespace) -> None:
             print(f"answer   {run.loop.answer}")
         for check in run.checks:
             print(f"check    {'PASS' if check.ok else 'FAIL'} [{check.check_type}] {check.detail}")
+        if getattr(observer, "cleanup_note", ""):
+            print(f"cleanup  {observer.cleanup_note}")
         print(f"result   {'PASS' if run.success else 'FAIL'}")
         if not run.success:
             raise SystemExit(1)

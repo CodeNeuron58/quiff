@@ -1,4 +1,4 @@
-"""Tests for the desktop pre-flight: user documents are never killed."""
+"""Tests for the desktop pre-flight and cleanup: the user's windows and notes are never touched."""
 
 import pytest
 
@@ -14,59 +14,90 @@ def make_task():
 
 @pytest.fixture
 def fake_desktop(monkeypatch):
-    """Fake the window helpers the pre-flight uses."""
-    state = {"closed": [], "answered": []}
-
-    state["windows"] = []
-    state["titles"] = {}
-    state["pids"] = {}
+    """Fake the window helpers; record any attempt to close a window."""
+    state = {"closed": [], "windows": [], "titles": {}, "pids": {}}
     monkeypatch.setattr(desktop_mod, "_top_windows_of_pid",
                         lambda pid: [w for w in state["windows"]
                                      if state["pids"].get(w) == pid])
     monkeypatch.setattr(desktop_mod, "_window_title",
                         lambda hwnd: state["titles"].get(hwnd, ""))
-    monkeypatch.setattr(desktop_mod, "_visible_windows",
-                        lambda: list(state["windows"]))
+    monkeypatch.setattr(desktop_mod, "_visible_windows", lambda: list(state["windows"]))
     monkeypatch.setattr(desktop_mod, "_pid_of", lambda hwnd: state["pids"].get(hwnd, 0))
-    monkeypatch.setattr(desktop_mod, "WM_CLOSE", 0)
 
-    class FakeUser32:
+    class RecordingUser32:
         def PostMessageW(self, hwnd, msg, w, l):
             state["closed"].append(hwnd)
-            state["windows"] = [w for w in state["windows"] if w != hwnd]
-            state["titles"].pop(hwnd, None)
             return 1
+
         def IsWindow(self, hwnd):
             return hwnd in state["windows"]
 
-    monkeypatch.setattr(desktop_mod, "user32", FakeUser32())
+    monkeypatch.setattr(desktop_mod, "user32", RecordingUser32())
     return state
 
 
-def test_preflight_proceeds_when_notepad_not_running(monkeypatch, fake_desktop):
+def tab_state(local_appdata):
+    folder = local_appdata / desktop_mod.NOTEPAD_TAB_STATE
+    folder.mkdir(parents=True)
+    return folder
+
+
+def test_preflight_proceeds_when_notepad_is_closed_and_has_no_saved_tabs(
+        monkeypatch, fake_desktop):
     monkeypatch.setattr(tasks_mod, "_notepad_pids", lambda: set())
     _preflight_desktop_app(make_task())  # must not raise
+    assert fake_desktop["closed"] == []
 
 
-def test_preflight_closes_blank_and_refuses_on_user_documents(monkeypatch, fake_desktop):
-    fake_desktop["windows"] = [101, 102]
-    fake_desktop["titles"] = {101: "Untitled - Notepad", 102: "dates.txt - Notepad"}
-    fake_desktop["pids"] = {101: 55, 102: 55}
+@pytest.mark.parametrize("title", ["Untitled - Notepad", "*Untitled - Notepad",
+                                   "dates.txt - Notepad"])
+def test_preflight_refuses_and_never_closes_any_open_notepad_window(
+        monkeypatch, fake_desktop, title):
+    fake_desktop["windows"] = [101]
+    fake_desktop["titles"] = {101: title}
+    fake_desktop["pids"] = {101: 55}
     monkeypatch.setattr(tasks_mod, "_notepad_pids", lambda: {55})
-    # window 101 is a blank leftover; 102 holds a user document
-    with pytest.raises(RuntimeError, match="close them first"):
+    with pytest.raises(RuntimeError, match="Notepad is already open"):
         _preflight_desktop_app(make_task())
+    assert fake_desktop["closed"] == []  # not even a blank or unsaved window
 
 
-def test_preflight_closes_leftover_blank_window(monkeypatch, fake_desktop):
-    class RealUser32:
-        def PostMessageW(self, hwnd, msg, w, l):
-            fake_desktop["windows"].remove(hwnd)
-            return 1
-        def IsWindow(self, hwnd):
-            return hwnd in fake_desktop["windows"]
+def test_preflight_refuses_on_saved_tabs_and_never_deletes_them(
+        monkeypatch, fake_desktop, isolated_local_appdata):
+    folder = tab_state(isolated_local_appdata)
+    note = folder / "user-tab.bin"
+    note.write_bytes(b"the user's unsaved notes")
+    monkeypatch.setattr(tasks_mod, "_notepad_pids", lambda: set())
+    with pytest.raises(RuntimeError, match="saved session tab"):
+        _preflight_desktop_app(make_task())
+    assert note.read_bytes() == b"the user's unsaved notes"
 
-    monkeypatch.setattr(desktop_mod, "user32", RealUser32())
-    fake_desktop["windows"] = [201]
+
+def test_preflight_ignores_other_apps(monkeypatch, fake_desktop):
     monkeypatch.setattr(tasks_mod, "_notepad_pids", lambda: {55})
-    _preflight_desktop_app(make_task())  # closes 201, no prompt, no refusal
+    task = Task(id="d02", app="explorer", split="dev", goal="x", checks=[])
+    _preflight_desktop_app(task)  # explorer: nothing to check, nothing closed
+    assert fake_desktop["closed"] == []
+
+
+def test_cleanup_removes_only_tab_files_this_run_created(monkeypatch, isolated_local_appdata):
+    folder = tab_state(isolated_local_appdata)
+    (folder / "old.bin").write_bytes(b"existed before the run")
+    before = desktop_mod.notepad_tab_files()
+    (folder / "ours.bin").write_bytes(b"quiff's own tab")
+    monkeypatch.setattr(desktop_mod, "notepad_pids", lambda: set())
+    note = desktop_mod.clean_own_notepad_tabs(before)
+    assert "removed 1" in note
+    assert (folder / "old.bin").exists()
+    assert not (folder / "ours.bin").exists()
+
+
+def test_cleanup_keeps_new_files_when_another_notepad_window_is_open(
+        monkeypatch, isolated_local_appdata):
+    folder = tab_state(isolated_local_appdata)
+    before = desktop_mod.notepad_tab_files()
+    (folder / "maybe-users.bin").write_bytes(b"could be the user's")
+    monkeypatch.setattr(desktop_mod, "notepad_pids", lambda: {77})
+    note = desktop_mod.clean_own_notepad_tabs(before)
+    assert "might be yours" in note
+    assert (folder / "maybe-users.bin").exists()

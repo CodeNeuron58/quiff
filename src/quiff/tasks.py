@@ -230,81 +230,42 @@ async def run_task(
 
 def _notepad_pids() -> set[int]:
     """Pids of running Notepad processes (scanned from visible windows)."""
-    import ctypes
+    from .observe.desktop import notepad_pids
 
-    pids: set[int] = set()
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.OpenProcess.restype = ctypes.c_void_p
-    kernel32.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
-    from .observe.desktop import _pid_of, _visible_windows
-
-    for hwnd in _visible_windows():
-        pid = _pid_of(hwnd)
-        handle = kernel32.OpenProcess(0x1000, False, pid)
-        if not handle:
-            continue
-        try:
-            buf = ctypes.create_unicode_buffer(1024)
-            size = ctypes.c_ulong(len(buf))
-            if kernel32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
-                if buf.value.lower().endswith("notepad.exe"):
-                    pids.add(pid)
-        finally:
-            kernel32.CloseHandle(handle)
-    return pids
+    return notepad_pids()
 
 
 def _preflight_desktop_app(task: Task) -> None:
-    """Close leftover EMPTY windows of the task's app and clear its saved
-    session state, so a run starts clean instead of restoring junk tabs from
-    earlier test runs.
+    """Refuse to start rather than touch anything that belongs to the user.
 
-    Windows holding documents are NEVER killed — a blank "Untitled" window is
-    safe to close with Don't save, a "dates.txt - Notepad" belongs to the user
-    and makes the run refuse instead."""
-    import os
-
-    from .observe.desktop import (_answer_dont_save, _top_windows_of_pid, _visible_windows,
-                                  _window_title, _pid_of, uia, UIA, user32, WM_CLOSE)
+    Quiff never closes, edits, or discards the user's windows or notes. Windows
+    11 Notepad reopens every saved tab inside whatever window opens next, so a
+    run only starts when Notepad is closed AND holds no saved tabs; otherwise
+    it stops and says what the user needs to do. (After a run, the observer
+    removes only the tab files its own window created.)"""
+    from .observe.desktop import _top_windows_of_pid, _window_title, notepad_tab_files
 
     if task.app != "notepad":
         return  # other apps: no safe blanket policy yet, none needed for the suite
 
-    pids = _notepad_pids()
-    if not pids:
-        return
-    # close blank windows politely (Don't save on any prompt)
-    for pid in pids:
-        for hwnd in _top_windows_of_pid(pid):
-            title = _window_title(hwnd)
-            if title in ("Untitled - Notepad", "*Untitled - Notepad"):
-                user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
-    deadline = time.monotonic() + 6.0
-    while time.monotonic() < deadline:
-        time.sleep(0.4)
-        for pid in pids:
-            for hwnd in _top_windows_of_pid(pid):
-                if _window_title(hwnd) in ("Untitled - Notepad", "*Untitled - Notepad"):
-                    _answer_dont_save(hwnd)
-                    user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
-    remaining = []
-    for pid in pids:
-        for hwnd in _top_windows_of_pid(pid):
-            title = _window_title(hwnd)
-            if title and title not in ("Untitled - Notepad",):
-                remaining.append(title)
-    if remaining:
+    open_titles = [
+        _window_title(hwnd) or "(untitled window)"
+        for pid in sorted(_notepad_pids())
+        for hwnd in _top_windows_of_pid(pid)
+    ]
+    if open_titles:
         raise RuntimeError(
-            "Notepad has open windows with documents ("
-            + "; ".join(remaining[:3])
-            + ") — close them first so Quiff gets a clean window."
+            "Notepad is already open (" + "; ".join(open_titles[:3]) + "). "
+            "Quiff never closes or edits your windows: save anything you need, "
+            "close Notepad yourself, then run again."
         )
-    tab_state = Path(os.environ.get("LOCALAPPDATA", "")) / (
-        "Packages/Microsoft.WindowsNotepad_8wekyb3d8bbwe/LocalState/TabState"
-    )
-    if tab_state.exists():
-        for junk in tab_state.glob("*.bin"):
-            junk.unlink(missing_ok=True)
+    saved_tabs = notepad_tab_files()
+    if saved_tabs:
+        raise RuntimeError(
+            f"Notepad has {len(saved_tabs)} saved session tab file(s) that would "
+            "reopen inside Quiff's window. Open Notepad, save or close those tabs, "
+            "close Notepad, then run again. Quiff never deletes them."
+        )
 
 
 def _start_url(task: Task) -> str | None:

@@ -41,6 +41,8 @@ async def test_skill_text_reaches_the_decider(tmp_path, monkeypatch):
 
     task = get_task("d01", load_tasks())
     monkeypatch.setattr(tasks_mod, "sandbox_dir", lambda t: tmp_path / t.id)
+    # never scan or depend on the real machine's Notepad windows from a test
+    monkeypatch.setattr(tasks_mod, "_preflight_desktop_app", lambda task: None)
 
     class FakeDesktopObserver:
         async def open(self, argv, cwd=None):
