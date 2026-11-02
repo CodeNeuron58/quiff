@@ -150,7 +150,7 @@ async def _plain(observer, decider, task):
                               sandbox=sandbox_dir(task), started_ts=_t.time())
     return {"mode": "quiff", "success": bool(all(c.ok for c in checks)),
             "elapsed_s": round(_t.perf_counter() - started, 2),
-            "model_calls": result.steps, "steps": result.steps}
+            "model_calls": result.model_calls, "steps": result.steps}
 
 
 def main() -> None:
@@ -174,8 +174,11 @@ def main() -> None:
         print(f"{mode:>7}: {summary[mode]['successes']}/{len(rs)} success · "
               f"median {summary[mode]['median_s']} s · model calls "
               f"{summary[mode]['model_calls']}")
+    from race import provenance
+
     out = Path("runs") / f"race-local-{time.strftime('%Y-%m-%d-%H%M%S')}.json"
-    out.write_text(json.dumps({"results": results, "summary": summary}, indent=2),
+    out.write_text(json.dumps({"provenance": provenance(), "runs_per_mode": args.runs,
+                               "results": results, "summary": summary}, indent=2),
                    encoding="utf-8")
     print(f"Saved {out}")
 

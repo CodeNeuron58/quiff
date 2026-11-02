@@ -23,7 +23,7 @@ from quiff.loop import FastLoop
 from quiff.learn import StepLogger
 from quiff.models.meta import MuseDecider, muse_spark, load_env
 from quiff.observe.browser import BrowserObserver
-from quiff.recall import ReplayDecider, load_flow
+from quiff.recall import FlowRecorder, ReplayDecider, load_flow
 from quiff.tasks import ObserverPage, get_task, load_tasks, sandbox_dir, setup_sandbox
 
 TASK_ID = "b05-test-login"
@@ -64,6 +64,8 @@ async def slow_act(observer, action: str, x: int, y: int, text: str) -> None:
     cdp = observer.connection()
     if x or y:
         for params in (
+            # the same hover-then-press sequence Quiff's own clicks use (fair race)
+            dict(type="mouseMoved", x=x, y=y),
             dict(type="mousePressed", x=x, y=y, button="left", clickCount=1),
             dict(type="mouseReleased", x=x, y=y, button="left", clickCount=1),
         ):
@@ -79,6 +81,19 @@ async def slow_act(observer, action: str, x: int, y: int, text: str) -> None:
                            windowsVirtualKeyCode=13, code="Enter")
 
 
+def _slow_decide(client, body: dict) -> tuple[dict | None, str | None]:
+    """One screenshot-agent request: (decision, None) or (None, what went wrong)."""
+    try:
+        reply = client._http.post("/chat/completions", json=body)
+        reply.raise_for_status()
+        content = reply.json()["choices"][0]["message"]["content"]
+        if not content:
+            return None, "empty reply"
+        return json.loads(content), None
+    except Exception as exc:  # HTTP error, timeout, malformed JSON
+        return None, f"{type(exc).__name__}: {exc}"[:160]
+
+
 async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
     started = time.perf_counter()
     goal = task.goal
@@ -86,7 +101,9 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
     page = ObserverPage(observer)
     history: list[str] = []
     model_calls = 0
-    success = False
+    api_errors = 0
+    said_done = False
+    stop_reason = "max steps"
 
     await observer.open(task.start["url"])
     await observer.wait_settled()
@@ -103,15 +120,24 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
                                                          history)},
                     {"type": "image_url", "image_url": {"url": data_uri}},
                 ]}]}
-        r = client._http.post("/chat/completions", json=body)
+        # same failure policy as Quiff's loop: retry once, then stop honestly
+        parsed, error = await asyncio.to_thread(_slow_decide, client, body)
         model_calls += 1
-        try:
-            parsed = json.loads(r.json()["choices"][0]["message"]["content"] or "{}")
-        except Exception:
-            parsed = {}
-        action = parsed.get("action", "done")
+        if error:
+            api_errors += 1
+            parsed, error = await asyncio.to_thread(_slow_decide, client, body)
+            model_calls += 1
+            if error:
+                api_errors += 1
+                stop_reason = f"api error: {error}"
+                break
+        action = parsed.get("action")
         if action == "done":
-            success = True
+            said_done = True  # the model's own claim; the checks decide
+            stop_reason = "model said done"
+            break
+        if action not in ("click", "type", "press"):
+            stop_reason = f"invalid action {action!r}"
             break
         await slow_act(observer, action, int(parsed.get("x", 0)), int(parsed.get("y", 0)),
                        str(parsed.get("text", "")))
@@ -122,8 +148,10 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
     elapsed = time.perf_counter() - started
     checks = await run_checks(task.checks, answer=None, page=page, sandbox=sandbox,
                               started_ts=started)
-    return {"mode": "slow", "success": bool(success and all(c.ok for c in checks)),
-            "elapsed_s": round(elapsed, 2), "model_calls": model_calls, "steps": len(history)}
+    return {"mode": "slow", "success": bool(said_done and all(c.ok for c in checks)),
+            "elapsed_s": round(elapsed, 2), "model_calls": model_calls, "steps": len(history),
+            "stop_reason": stop_reason, "said_done": said_done, "api_errors": api_errors,
+            "checks_pass": all(c.ok for c in checks)}
 
 
 # ---------------------------------------------------------------- quiff + replay
@@ -144,21 +172,48 @@ async def _loop_run(observer, decider, task, mode: str, rescuer=None) -> dict:
     if not all(c.ok for c in checks):
         print(f"    [{mode}] check details: " +
               "; ".join(f"{c.check_type}={c.ok}:{c.detail[:60]}" for c in checks))
-    model_calls = 0 if mode == "replay" else result.steps
     return {"mode": mode,
             "success": bool(all(c.ok for c in checks)),
             "elapsed_s": round(time.perf_counter() - started, 2),
-            "model_calls": model_calls, "steps": result.steps}
+            # every model request (decisions incl. the final "done", retries,
+            # rescues); replay counts zero because it calls no model
+            "model_calls": result.model_calls, "steps": result.steps,
+            "stop_reason": result.stop_reason, "rescues": result.rescues}
 
 
 async def quiff_run(observer, task) -> dict:
-    decider = MuseDecider(effort="minimal")
+    # records what it did: the replay mode replays a flow Quiff recorded in this race
+    decider = FlowRecorder(MuseDecider(effort="minimal"), task.id, task.goal)
     rescuer = MuseDecider(effort="high", max_tokens=4096)
-    return await _loop_run(observer, decider, task, "quiff", rescuer=rescuer)
+    result = await _loop_run(observer, decider, task, "quiff", rescuer=rescuer)
+    if result["success"]:
+        decider.save_if_ran(True)
+    return result
 
 
 async def replay_run(observer, task) -> dict:
-    return await _loop_run(observer, ReplayDecider(load_flow(task.id)), task, "replay")
+    try:
+        flow = load_flow(task.id)
+    except (FileNotFoundError, OSError):
+        return {"mode": "replay", "success": False, "elapsed_s": 0.0, "model_calls": 0,
+                "steps": 0, "stop_reason": "no recorded flow: no Quiff run succeeded"}
+    return await _loop_run(observer, ReplayDecider(flow), task, "replay")
+
+
+def provenance() -> dict:
+    """Which code produced these numbers, so they can be checked later."""
+    import subprocess
+
+    def git(*args: str) -> str:
+        try:
+            return subprocess.run(["git", *args], capture_output=True, text=True,
+                                  timeout=10).stdout.strip()
+        except Exception:
+            return ""
+
+    return {"commit": git("rev-parse", "--short", "HEAD"),
+            "uncommitted_changes": bool(git("status", "--porcelain", "--untracked-files=no")),
+            "measured_at": time.strftime("%Y-%m-%d %H:%M:%S %z")}
 
 
 # ---------------------------------------------------------------- main
@@ -193,7 +248,8 @@ async def race(runs: int) -> dict:
         print(f"{mode:>7}: {summary[mode]['successes']}/{len(rs)} success · "
               f"median {summary[mode]['median_s']} s · model calls "
               f"{summary[mode]['model_calls']}")
-    return {"task": TASK_ID, "runs_per_mode": runs, "results": results, "summary": summary}
+    return {"task": TASK_ID, "runs_per_mode": runs, "provenance": provenance(),
+            "results": results, "summary": summary}
 
 
 def main() -> None:
