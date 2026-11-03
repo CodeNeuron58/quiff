@@ -370,7 +370,8 @@ class FastLoop:
 
 
 SENSITIVE_FIELD = re.compile(
-    r"pass(word)?|pwd|otp|secret|token|api[- _]?key|card|cvv|cvc|pin|cc[-_ ]?(num|csc|exp)|credit|ssn|social[- _]security", re.I
+    r"pass(word)?|pwd|otp|secret|token|api[- _]?key|card|cvv|cvc|\bpin(\s*code)?\b|cc[-_ ]?(num|csc|exp)|credit|ssn"
+    r"|social[- _]security", re.I  # \bpin\b: the role "spinbutton" (every number box) is not a PIN
 )
 
 

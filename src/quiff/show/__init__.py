@@ -18,7 +18,7 @@ from ..observe.table import ActionRow
 # The same pattern as the step log's redaction (loop.SENSITIVE_FIELD; copied
 # because loop imports this module): never put a typed secret on screen.
 _SECRET_FIELD = re.compile(
-    r"pass(word)?|pwd|otp|secret|token|api[- _]?key|card|cvv|cvc|pin|cc[-_ ]?(num|csc|exp)"
+    r"pass(word)?|pwd|otp|secret|token|api[- _]?key|card|cvv|cvc|\bpin(\s*code)?\b|cc[-_ ]?(num|csc|exp)"
     r"|credit|ssn|social[- _]security", re.I)
 
 Rect = tuple[int, int, int, int]  # left, top, right, bottom in screen pixels

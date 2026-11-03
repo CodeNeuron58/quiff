@@ -76,6 +76,8 @@ uv run quiff run b05 --replay --headed
 > [!TIP]
 > This first run needs no API key: it replays a recorded login, with zero AI calls.
 
+**Or skip the terminal:** double-click `Quiff.cmd` (or run `uv run quiff app`) to open Quiff's window. Say or type the chore (<kbd>Win</kbd> + <kbd>H</kbd> speaks it), pick the website or app and an optional spreadsheet, approve with a click, and run any saved chore again with zero AI calls.
+
 With a Meta Model API key in `.env` (`META_API_KEY=...`, from [ai.developer.meta.com](https://ai.developer.meta.com)), give Quiff a goal of your own:
 
 ```bash
@@ -96,6 +98,7 @@ At the approval, answer `a` to approve *Submit order* for every row. `--show` tu
 ## Features
 
 - **Goals in plain words.** `quiff do "<goal>"` works in Chrome or a desktop app, with optional checks on the URL, the page text or a file.
+- **No terminal needed.** `Quiff.cmd` opens a window: say or type a chore, pick where it happens, approve with a click, and run saved chores again.
 - **Teach once, repeat per row.** `quiff batch` gives row 1 of a CSV to Muse Spark, then replays every other row with its own values.
 - **Replay with zero AI calls.** A saved run finds each control again by its role and name, so small layout changes don't break it.
 - **No screenshots.** Windows UI Automation and Chrome's DevTools protocol turn the screen into a numbered list of controls.
@@ -138,6 +141,7 @@ Every reasoning effort picked the right control 20 times out of 20, and higher e
 uv sync
 echo META_API_KEY=your-key > .env      # from ai.developer.meta.com
 uv run quiff tasks                     # list the 20-task suite
+uv run quiff app                       # Quiff's window: teach chores, approve, run them again (or double-click Quiff.cmd)
 uv run quiff run b05 --replay --headed # no API key yet? replays a flow from examples/flows/: zero model calls
 uv run quiff run b05 --headed          # the model logs into a public test site
 cd overlay && npm install && cd ..     # once, for --show
@@ -221,7 +225,7 @@ When the minimal decider is unsure, Muse Spark at high reasoning (the rescuer) t
 | Folder | What's inside |
 |---|---|
 | [`src/quiff/observe/`](src/quiff/observe/) | The screen as a numbered action table: Chrome over the DevTools protocol, Windows over UI Automation |
-| [`src/quiff/`](src/quiff/) | The loop, acting and the approval guard, checks, replay, batch, the CLI |
+| [`src/quiff/`](src/quiff/) | The loop, acting and the approval guard, checks, replay, batch, the CLI, and the app (`quiff app`) |
 | [`src/quiff/models/`](src/quiff/models/) | Muse Spark and Muse Spark Open clients and the decision schema |
 | [`src/quiff/skills/`](src/quiff/skills/) | Per-app guidance: Chrome, Notepad, File Explorer |
 | [`overlay/`](overlay/) | The on-screen overlay (Electron) |
@@ -274,6 +278,7 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 - the browser and Windows loops with Muse Spark;
 - `quiff do`: your own goals, in Chrome or a desktop app, with optional checks;
 - `quiff batch`: teach once on row 1, replay rows 2..N of a CSV with zero AI calls (browser);
+- `quiff app`: a window to teach chores, approve them and run them again, without the terminal;
 - driver skills (Save As, menus, downloads) and per-app skill files;
 - the approval guard and ownership-based window safety;
 - rescue escalation with a budget, and correction rounds from failed checks;

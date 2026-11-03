@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiff</title>
+<style>
+:root {
+  --desk: #E6E8EC; --bar: #121315; --raised: #1E2024; --foot: #0D0E10; --line: rgba(255,255,255,.08);
+  --text: #EDEDEF; --strong: #F5F5F7; --muted: #A8A8AE; --faint: #8E8E94;
+  --blue: #2D6AD1; --halo: #4C8DF6; --blue-text: #A9C8FF; --blue-soft: rgba(76,141,246,.16);
+  --green: #3DBE8B; --green-text: #8DE2BF; --green-soft: rgba(61,190,139,.16);
+  --coral: #EF6A4C; --coral-text: #FFB4A1; --coral-soft: rgba(239,106,76,.16);
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--desk); }
+body { margin: 0; min-height: 100vh; padding: 56px 16px 32px; display: flex; flex-direction: column; align-items: center;
+  font: 15px/1.45 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; color: var(--text); background: var(--desk); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--halo); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+kbd { font-family: var(--mono); font-size: 12px; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.14); }
+
+.bar { width: 100%; max-width: 780px; background: var(--bar); border-radius: 16px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(17,18,20,.10), 0 30px 70px rgba(17,18,20,.28); }
+.mark { flex: none; width: 30px; height: 30px; margin-top: 3px; }
+.mark.small { width: 26px; height: 26px; margin-top: 0; }
+
+/* compose */
+.ask { display: flex; align-items: flex-start; gap: 14px; padding: 24px 24px 12px; }
+.ask-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ask-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 12px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.ask-label .hint { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--muted); }
+.ask-label .hint kbd { font-size: 11px; }
+#sentence { width: 100%; resize: none; border: 0; background: transparent; color: var(--strong); font-size: 22px; line-height: 1.35;
+  padding: 0; outline: none; min-height: 60px; }
+#sentence::placeholder { color: #6E6E75; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 14px 68px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px;
+  background: var(--raised); color: #D7D7DC; font-size: 14px; box-shadow: inset 0 0 0 1px var(--line); max-width: 100%; }
+.chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip[aria-expanded="true"] { box-shadow: inset 0 0 0 1.5px var(--halo); }
+.chip .state { font-family: var(--mono); font-size: 12px; color: var(--green-text); }
+.chip .state.off { color: var(--muted); }
+.chip:disabled { cursor: default; opacity: .7; }
+.chip svg, .btn svg, .icon svg, .card-title svg { flex: none; }
+.editor { margin: 0 24px 16px 68px; padding: 14px; border-radius: 12px; background: #17181B; box-shadow: inset 0 0 0 1px var(--line);
+  display: flex; flex-direction: column; gap: 10px; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--foot); width: fit-content; }
+.seg button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--strong); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.field { height: 42px; border: 0; border-radius: 9px; padding: 0 12px; background: var(--foot); color: var(--strong);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); font-size: 15px; width: 100%; }
+#url { font-family: var(--mono); font-size: 14px; }
+select.field { appearance: auto; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.warn { margin: 0; font-size: 13px; color: var(--coral-text); }
+.check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #D7D7DC; min-height: 32px; }
+.check input { width: 18px; height: 18px; accent-color: var(--halo); }
+.row-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.colsline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 24px 18px 68px; font-size: 13px; color: var(--muted); }
+.col { padding: 2px 8px; border-radius: 6px; background: var(--blue-soft); color: var(--blue-text); font-family: var(--mono); font-size: 12px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px 12px 24px;
+  background: var(--foot); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); font-size: 13px; color: var(--muted); }
+.error { margin: 0; padding: 12px 24px; background: var(--coral-soft); color: var(--coral-text); font-size: 14px; }
+.btn { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; font-size: 15px; display: inline-flex; align-items: center; gap: 10px; }
+.btn.primary { background: var(--blue); color: #fff; font-weight: 600; padding: 0 18px; }
+.btn.primary:disabled { opacity: .55; cursor: default; }
+.btn.ghost { background: var(--raised); color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); font-size: 14px; font-weight: 500; }
+.btn.outline { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+.btn.coral { background: var(--coral); color: #1B0F0B; font-weight: 600; }
+.btn.coral kbd { background: rgba(27,15,11,.14); }
+.btn.green { background: var(--green); color: #0B1F17; font-weight: 600; }
+.btn.small { min-height: 40px; font-size: 14px; padding: 0 12px; }
+.zero { font-family: var(--mono); font-size: 12px; color: var(--green-text); }
+
+.chores { padding: 10px 12px 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+.chores-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 8px 12px 6px; }
+.chores-head h2 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.chores-head span { font-size: 12px; color: var(--faint); }
+#chores { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.chore { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 12px; border-radius: 10px; }
+.chore:hover { background: rgba(255,255,255,.03); }
+.icon { flex: none; width: 38px; height: 38px; border-radius: 9px; background: var(--raised); color: #C9CBD1; display: grid; place-items: center; }
+.chore-main { flex: 1 1 260px; min-width: 0; }
+.chore-title { font-size: 15px; font-weight: 500; color: var(--strong); overflow-wrap: anywhere; }
+.chore-meta { font-size: 13px; color: var(--faint); overflow-wrap: anywhere; }
+.chore-actions { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.forget { width: 40px; min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--faint); display: grid; place-items: center; }
+.forget:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.empty { margin: 4px 12px 8px; font-size: 14px; color: var(--muted); }
+
+/* run */
+.status { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 22px 24px 0; }
+.badge { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 8px;
+  font-size: 14px; font-weight: 600; background: var(--blue-soft); color: var(--blue-text); }
+.badge .dot { width: 7px; height: 7px; border-radius: 2px; background: var(--halo); }
+.badge.green { background: var(--green-soft); color: var(--green-text); } .badge.green .dot { background: var(--green); }
+.badge.coral { background: var(--coral-soft); color: var(--coral-text); } .badge.coral .dot { background: var(--coral); }
+.headline { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 17px; color: var(--strong); }
+.meter { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 12px 24px 0;
+  font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.meter #choreName { color: var(--faint); font-family: inherit; overflow-wrap: anywhere; }
+.progress { margin: 12px 24px 16px; height: 4px; border-radius: 2px; background: #24262B; overflow: hidden; position: relative; }
+.progress > div { height: 4px; width: 0; background: var(--halo); transition: width .3s ease; }
+.progress.green > div { background: var(--green); } .progress.coral > div { background: var(--coral); }
+.progress.busy > div { width: 30%; position: absolute; animation: slide 1.6s ease-in-out infinite; }
+@keyframes slide { from { left: -30%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .progress.busy > div { animation: none; left: 0; width: 100%; opacity: .5; } }
+.card { margin: 0 24px 16px; padding: 16px 18px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; }
+.card-title { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.card-text { font-size: 16px; color: var(--strong); overflow-wrap: anywhere; }
+.card-sub { font-size: 14px; color: var(--muted); }
+.card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.card.approval { background: rgba(239,106,76,.08); box-shadow: inset 0 0 0 1.5px var(--coral); }
+.card.approval .card-title { color: var(--coral-text); }
+.card.done { background: rgba(61,190,139,.08); box-shadow: inset 0 0 0 1.5px var(--green); }
+.card.done .card-title { color: var(--green-text); }
+.card.failed { background: #1A1B1E; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.card.failed pre { margin: 0; max-height: 180px; overflow: auto; padding: 10px 12px; border-radius: 8px; background: var(--foot);
+  font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.log { list-style: none; margin: 0; padding: 0 24px 12px; display: flex; flex-direction: column; max-height: 420px; overflow: auto; }
+.log li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 48px; align-items: center; gap: 12px; min-height: 38px;
+  font-size: 14px; color: #C9CBD1; box-shadow: inset 0 -1px 0 rgba(255,255,255,.05); }
+.log li:last-child { color: #fff; }
+.log .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--halo); }
+.log .replay .dot, .log .check .dot { background: var(--green); }
+.log .fail .dot { background: var(--coral); }
+.log .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log .who { font-family: var(--mono); font-size: 12px; color: var(--blue-text); white-space: nowrap; }
+.log .replay .who, .log .check .who { color: var(--green-text); }
+.log .fail .who { color: var(--coral-text); }
+.log .secs { font-family: var(--mono); font-size: 12px; color: var(--faint); text-align: right; }
+.runfoot { display: flex; justify-content: flex-end; padding: 4px 16px 14px; }
+.link { min-height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 14px; }
+.link:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.foot { margin: 18px 0 0; font-size: 13px; color: #59606A; text-align: center; max-width: 780px; }
+.foot b { font-weight: 600; color: #3D444D; }
+@media (max-width: 600px) {
+  body { padding-top: 20px; }
+  .chips, .colsline { padding-left: 24px; }
+  .editor { margin-left: 24px; }
+  #sentence { font-size: 19px; }
+  .log li { grid-template-columns: 14px minmax(0, 1fr) 44px; }
+  .log .who { display: none; }
+}
+</style>
+</head>
+<body>
+<template id="i-web"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"></path></svg></template>
+<template id="i-sheet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M3 15h18M9 4v16"></path></svg></template>
+<template id="i-app"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg></template>
+<template id="i-replay"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v6h6"></path><path d="M5.5 15a7 7 0 1 0 1.6-7.3L4 10"></path></svg></template>
+<template id="i-x"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></template>
+
+<main class="bar">
+  <section id="compose" aria-label="Teach Quiff a chore">
+    <div class="ask">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.9 L20.1 9.5 Q21.5 10.1 20.1 10.7 L13.5 13 Q12.9 13.2 12.7 13.8 L10.5 20.3 Q9.9 21.7 9.3 20.3 L2.9 3.6 Q2.5 2.5 3.6 2.9 Z" fill="#1C1D20" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"></path><rect x="13.5" y="13.5" width="9.5" height="9.5" rx="2.5" fill="#2D6AD1" stroke="#FFFFFF" stroke-width="1"></rect><text x="18.25" y="20.8" text-anchor="middle" font-size="7" font-weight="700" fill="#FFFFFF" font-family="Segoe UI, sans-serif">Q</text></svg>
+      <div class="ask-main">
+        <div class="ask-label"><label for="sentence">Teach Quiff a chore</label><span class="hint">Press <kbd>Win</kbd> + <kbd>H</kbd> to speak it</span></div>
+        <textarea id="sentence" rows="2" placeholder="Fill in the purchase order and submit it."></textarea>
+      </div>
+    </div>
+    <div class="chips">
+      <button type="button" class="chip" id="whereChip" aria-expanded="false" aria-controls="whereEditor"><span id="whereIcon"></span><span id="whereText">Where?</span></button>
+      <button type="button" class="chip" id="sheetChip" aria-expanded="false" aria-controls="sheetEditor"><span id="sheetIcon"></span><span id="sheetText">No spreadsheet</span></button>
+      <button type="button" class="chip" id="showChip" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"></path><circle cx="12" cy="12" r="2.8"></circle></svg><span>Show each step on screen</span><span class="state" id="showState">On</span></button>
+    </div>
+    <div class="editor" id="whereEditor" hidden>
+      <div class="seg" role="group" aria-label="Where the chore happens">
+        <button type="button" id="segWeb" aria-pressed="true">A website</button>
+        <button type="button" id="segApp" aria-pressed="false">A Windows app</button>
+      </div>
+      <div id="webFields">
+        <label for="url" class="sr">Website address</label>
+        <input id="url" class="field" type="text" placeholder="127.0.0.1:8766/orders/new" spellcheck="false" autocomplete="off">
+      </div>
+      <div id="appFields" hidden>
+        <label for="app" class="sr">Windows app</label>
+        <select id="app" class="field"><option value="notepad">Notepad</option><option value="explorer">File Explorer</option></select>
+        <p class="note">Spreadsheet chores run on websites. Windows apps take one chore at a time.</p>
+      </div>
+    </div>
+    <div class="editor" id="sheetEditor" hidden>
+      <input type="file" id="file" accept=".csv,text/csv" class="sr" tabindex="-1">
+      <div class="row-btns">
+        <button type="button" class="btn ghost small" id="pickFile">Choose a CSV file…</button>
+        <button type="button" class="btn ghost small" id="dropSheet" hidden>No spreadsheet</button>
+      </div>
+      <p class="note" id="sheetNote">Quiff does row 1 with Muse Spark, then repeats every other row with zero AI calls. From Excel: File → Save As → CSV. The first row must name the columns.</p>
+      <label class="check" id="checkWrap" hidden><input type="checkbox" id="checkFirst" checked><span id="checkText">After each row, check the page shows it</span></label>
+      <p class="warn" id="shortWarn" hidden></p>
+    </div>
+    <div class="colsline" id="colsLine" hidden><span>Each row fills</span></div>
+    <div class="actions">
+      <span id="actionHint">Muse Spark does it once. Every repeat after that makes zero AI calls.</span>
+      <button type="button" class="btn primary" id="teach">Teach Quiff <kbd>↵</kbd></button>
+    </div>
+    <p class="error" id="error" role="alert" hidden></p>
+    <section class="chores" aria-labelledby="choresTitle">
+      <div class="chores-head"><h2 id="choresTitle">Your chores</h2><span>Taught once. Every repeat makes zero AI calls.</span></div>
+      <ul id="chores"></ul>
+      <p class="empty" id="noChores" hidden>Nothing taught yet. Your first chore shows up here.</p>
+    </section>
+  </section>
+
+  <section id="run" aria-label="Quiff at work" hidden>
+    <div class="status">
+      <svg class="mark small" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.9 L20.1 9.5 Q21.5 10.1 20.1 10.7 L13.5 13 Q12.9 13.2 12.7 13.8 L10.5 20.3 Q9.9 21.7 9.3 20.3 L2.9 3.6 Q2.5 2.5 3.6 2.9 Z" fill="#1C1D20" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"></path><rect x="13.5" y="13.5" width="9.5" height="9.5" rx="2.5" fill="#2D6AD1" stroke="#FFFFFF" stroke-width="1"></rect><text x="18.25" y="20.8" text-anchor="middle" font-size="7" font-weight="700" fill="#FFFFFF" font-family="Segoe UI, sans-serif">Q</text></svg>
+      <span class="badge" id="badge"><span class="dot"></span><span id="badgeText">Working</span></span>
+      <span class="headline" id="headline" aria-live="polite">Starting…</span>
+    </div>
+    <div class="meter"><span id="meter"></span><span id="choreName"></span></div>
+    <div class="progress busy" id="progress"><div id="progressFill"></div></div>
+    <div class="card approval" id="approval" hidden>
+      <div class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"></path></svg>Quiff needs your yes</div>
+      <div class="card-text" id="approvalText"></div>
+      <div class="card-actions">
+        <button type="button" class="btn coral" id="yesAll">Yes, for every row <kbd>A</kbd></button>
+        <button type="button" class="btn outline" id="yesOne">Yes <kbd>Y</kbd></button>
+        <button type="button" class="btn outline" id="no">No, stop <kbd>N</kbd></button>
+      </div>
+    </div>
+    <div class="card done" id="done" hidden>
+      <div class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg><span id="doneTitle">Done</span></div>
+      <div class="card-sub" id="doneSub"></div>
+      <div class="card-actions">
+        <button type="button" class="btn green" id="again"><span id="againIcon"></span>Run again · 0 AI calls</button>
+        <button type="button" class="btn outline" id="newChore">New chore</button>
+      </div>
+    </div>
+    <div class="card failed" id="failed" hidden>
+      <div class="card-text" id="failedTitle">Quiff couldn’t finish this one.</div>
+      <div class="card-sub" id="failedSub"></div>
+      <pre id="failedTail"></pre>
+      <div class="card-actions"><button type="button" class="btn primary" id="back">Back to my chores</button></div>
+    </div>
+    <ol class="log" id="log" aria-label="Steps"></ol>
+    <div class="runfoot"><button type="button" class="link" id="stop">Stop</button></div>
+  </section>
+</main>
+<p class="foot" id="foot">Quiff runs on this computer only.</p>
+
+<script>
+(() => {
+  'use strict';
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const $ = (id) => document.getElementById(id);
+  const icon = (name) => $('i-' + name).content.firstElementChild.cloneNode(true);
+  let info = { has_key: false, overlay: false, apps: { notepad: 'Notepad', explorer: 'File Explorer' } };
+  const ui = { whereType: 'url', url: '', app: 'notepad', sheet: null, show: true, checkFirst: true };
+  let timer = null, since = 0, current = null, lastChoreId = null;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('quiff.where') || 'null');
+    if (saved && typeof saved === 'object') {
+      ui.whereType = saved.whereType === 'app' ? 'app' : 'url';
+      ui.url = typeof saved.url === 'string' ? saved.url : '';
+      ui.app = saved.app in info.apps ? saved.app : 'notepad';
+    }
+  } catch (e) { /* storage may be off: start fresh */ }
+  const rememberWhere = () => {
+    try { localStorage.setItem('quiff.where', JSON.stringify({ whereType: ui.whereType, url: ui.url, app: ui.app })); } catch (e) {}
+  };
+
+  async function api(path, options) {
+    options = options || {};
+    const headers = Object.assign({ 'X-Quiff-Token': token }, options.headers || {});
+    if (typeof options.body === 'string') headers['Content-Type'] = 'application/json';
+    const res = await fetch(path, Object.assign({}, options, { headers }));
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error(data.error || 'Quiff answered ' + res.status + '.');
+    return data;
+  }
+  const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body || {}) });
+
+  function showError(message) {
+    $('error').textContent = message || '';
+    $('error').hidden = !message;
+  }
+
+  // ---------------------------------------------------------------- compose
+  function hostOf(url) {
+    try { return new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : 'http://' + url).host; } catch (e) { return url; }
+  }
+  function renderChips() {
+    const whereIcon = $('whereIcon');
+    whereIcon.replaceChildren(icon(ui.whereType === 'app' ? 'app' : 'web'));
+    $('whereText').textContent = ui.whereType === 'app' ? info.apps[ui.app] || ui.app
+      : (ui.url ? ui.url.replace(/^https?:\/\//, '') : 'Where? Add a website');
+    $('sheetIcon').replaceChildren(icon('sheet'));
+    $('sheetText').textContent = ui.sheet ? ui.sheet.name + ' · ' + ui.sheet.rows + ' rows' : 'No spreadsheet';
+    $('segWeb').setAttribute('aria-pressed', String(ui.whereType === 'url'));
+    $('segApp').setAttribute('aria-pressed', String(ui.whereType === 'app'));
+    $('webFields').hidden = ui.whereType !== 'url';
+    $('appFields').hidden = ui.whereType !== 'app';
+    $('url').value = ui.url;
+    $('app').value = ui.app;
+    const show = ui.show && info.overlay;
+    $('showChip').setAttribute('aria-pressed', String(show));
+    $('showChip').disabled = !info.overlay;
+    $('showChip').title = info.overlay ? '' : 'The overlay isn’t installed: run npm install in the overlay folder once.';
+    $('showState').textContent = info.overlay ? (show ? 'On' : 'Off') : 'Not installed';
+    $('showState').classList.toggle('off', !show);
+    const line = $('colsLine');
+    line.replaceChildren(Object.assign(document.createElement('span'), { textContent: 'Each row fills' }));
+    if (ui.sheet) ui.sheet.columns.forEach((c) => line.appendChild(Object.assign(document.createElement('span'), { className: 'col', textContent: c })));
+    line.hidden = !ui.sheet;
+    $('dropSheet').hidden = !ui.sheet;
+    $('checkWrap').hidden = !ui.sheet;
+    $('checkFirst').checked = ui.checkFirst;
+    if (ui.sheet) $('checkText').textContent = 'After each row, check the page shows its “' + ui.sheet.columns[0] + '”';
+    $('pickFile').textContent = ui.sheet ? 'Choose another CSV file…' : 'Choose a CSV file…';
+    $('shortWarn').hidden = !(ui.sheet && ui.sheet.short && ui.sheet.short.length);
+    if (ui.sheet && ui.sheet.short && ui.sheet.short.length) {
+      $('shortWarn').textContent = 'Row 1 has a value under 2 characters in ' + ui.sheet.short.join(', ')
+        + '. Quiff can’t tell those apart per row, so it would type the same value every time. Use 2 or more characters (05 instead of 5).';
+    }
+    $('actionHint').textContent = ui.sheet
+      ? 'Row 1 goes to Muse Spark. Rows 2–' + ui.sheet.rows + ' repeat what it learned, with zero AI calls.'
+      : 'Muse Spark does it once. Every repeat after that makes zero AI calls.';
+  }
+  function toggleEditor(which) {
+    const pairs = { where: ['whereChip', 'whereEditor'], sheet: ['sheetChip', 'sheetEditor'] };
+    Object.keys(pairs).forEach((key) => {
+      const open = key === which && $(pairs[key][1]).hidden;
+      $(pairs[key][1]).hidden = !open;
+      $(pairs[key][0]).setAttribute('aria-expanded', String(open));
+    });
+  }
+  $('whereChip').addEventListener('click', () => { toggleEditor('where'); if (!$('whereEditor').hidden && ui.whereType === 'url') $('url').focus(); });
+  $('sheetChip').addEventListener('click', () => toggleEditor('sheet'));
+  $('showChip').addEventListener('click', () => { ui.show = !ui.show; renderChips(); });
+  $('segWeb').addEventListener('click', () => { ui.whereType = 'url'; rememberWhere(); renderChips(); });
+  $('segApp').addEventListener('click', () => { ui.whereType = 'app'; ui.sheet = null; rememberWhere(); renderChips(); });
+  $('url').addEventListener('input', () => { ui.url = $('url').value.trim(); rememberWhere(); renderChipsSoon(); });
+  $('app').addEventListener('change', () => { ui.app = $('app').value; rememberWhere(); renderChips(); });
+  $('checkFirst').addEventListener('change', () => { ui.checkFirst = $('checkFirst').checked; });
+  $('dropSheet').addEventListener('click', () => { ui.sheet = null; renderChips(); });
+  $('pickFile').addEventListener('click', () => $('file').click());
+  let soon = null;
+  function renderChipsSoon() { clearTimeout(soon); soon = setTimeout(() => { $('whereText').textContent = ui.url ? ui.url.replace(/^https?:\/\//, '') : 'Where? Add a website'; }, 120); }
+
+  async function upload(file) {
+    const data = await api('/api/upload?name=' + encodeURIComponent(file.name), { method: 'POST', body: file });
+    return data;
+  }
+  $('file').addEventListener('change', async () => {
+    const file = $('file').files[0];
+    $('file').value = '';
+    if (!file) return;
+    showError('');
+    try {
+      const sheet = await upload(file);
+      if (pendingNewRows) {
+        const chore = pendingNewRows; pendingNewRows = null;
+        return start({ mode: 'replay', id: chore.id, csv: sheet.path, show: ui.show });
+      }
+      ui.sheet = sheet;
+      ui.whereType = 'url';
+      renderChips();
+    } catch (e) { pendingNewRows = null; showError(e.message); }
+  });
+
+  // ---------------------------------------------------------------- chores
+  let pendingNewRows = null;
+  function metaFor(c) {
+    const learned = c.kind === 'example' ? 'A recorded example: replays with no API key'
+      : 'Learned with ' + c.calls + ' AI call' + (c.calls === 1 ? '' : 's');
+    const where = c.kind === 'app' ? (info.apps[c.where] || c.where)
+      : c.kind === 'sheet' ? (c.csv_name || 'spreadsheet') + ' · ' + c.columns.length + ' columns'
+      : c.kind === 'example' ? hostOf(c.where) : hostOf(c.where);
+    const runs = c.runs > 1 ? ' · run ' + c.runs + ' times' : '';
+    return where + ' · ' + learned + runs;
+  }
+  function renderChores(list) {
+    const ul = $('chores');
+    ul.replaceChildren();
+    list.forEach((c) => {
+      const li = document.createElement('li');
+      li.className = 'chore';
+      const ic = document.createElement('span');
+      ic.className = 'icon';
+      ic.appendChild(icon(c.kind === 'sheet' ? 'sheet' : c.kind === 'app' ? 'app' : 'web'));
+      const main = document.createElement('div');
+      main.className = 'chore-main';
+      main.appendChild(Object.assign(document.createElement('div'), { className: 'chore-title', textContent: c.title }));
+      main.appendChild(Object.assign(document.createElement('div'), { className: 'chore-meta', textContent: metaFor(c) }));
+      const actions = document.createElement('div');
+      actions.className = 'chore-actions';
+      if (c.kind === 'sheet') {
+        const fresh = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost small', textContent: 'New rows…' });
+        fresh.title = 'Run it on another CSV with the same columns';
+        fresh.addEventListener('click', () => { pendingNewRows = c; $('file').click(); });
+        actions.appendChild(fresh);
+      }
+      const again = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost small' });
+      again.append(icon('replay'), document.createTextNode('Run again'), Object.assign(document.createElement('span'), { className: 'zero', textContent: '0 AI calls' }));
+      again.addEventListener('click', () => start({ mode: 'replay', id: c.id, show: ui.show }));
+      actions.appendChild(again);
+      if (c.kind !== 'example') {
+        const forget = Object.assign(document.createElement('button'), { type: 'button', className: 'forget' });
+        forget.setAttribute('aria-label', 'Forget “' + c.title + '”');
+        forget.appendChild(icon('x'));
+        forget.addEventListener('click', async () => {
+          if (!confirm('Forget “' + c.title + '”? Quiff will have to learn it again.')) return;
+          try { await post('/api/forget', { id: c.id }); loadChores(); } catch (e) { showError(e.message); }
+        });
+        actions.appendChild(forget);
+      }
+      li.append(ic, main, actions);
+      ul.appendChild(li);
+    });
+    $('noChores').hidden = list.some((c) => c.kind !== 'example');
+  }
+  async function loadChores() {
+    try { renderChores((await api('/api/chores')).chores || []); } catch (e) { showError(e.message); }
+  }
+
+  // ---------------------------------------------------------------- run
+  const LABELS = {
+    running: ['Working', ''], replaying: ['Replaying', 'green'], approval: ['Needs you', 'coral'],
+    done: ['Done', 'green'], failed: ['Didn’t finish', 'coral'], stopped: ['Stopped', 'coral']
+  };
+  async function teach() {
+    showError('');
+    const sentence = $('sentence').value.trim();
+    if (!sentence) { showError('Tell Quiff what to do first: type it, or press Win + H and say it.'); $('sentence').focus(); return; }
+    if (ui.whereType === 'url' && !ui.url) { toggleEditor('where'); if ($('whereEditor').hidden) toggleEditor('where'); showError('Where should Quiff do it? Add the website’s address.'); $('url').focus(); return; }
+    if (!info.has_key) { showError('Teaching needs a Meta API key: put META_API_KEY=... in the .env file next to the README, then open Quiff again. Replays work without one.'); return; }
+    await start({
+      mode: 'teach', sentence: sentence, show: ui.show, check_first: ui.checkFirst,
+      where: { type: ui.whereType, value: ui.whereType === 'url' ? ui.url : ui.app },
+      sheet: ui.sheet ? { path: ui.sheet.path } : null
+    });
+  }
+  async function start(body) {
+    showError('');
+    try {
+      const res = await post('/api/run', body);
+      openRun(body.mode === 'replay');
+      current = res.id;
+      poll();
+    } catch (e) { showError(e.message); }
+  }
+  function openRun(replay) {
+    $('compose').hidden = true;
+    $('run').hidden = false;
+    $('log').replaceChildren();
+    since = 0;
+    ['approval', 'done', 'failed'].forEach((id) => { $(id).hidden = true; });
+    $('stop').hidden = false;
+    setBadge(replay ? 'replaying' : 'running');
+    $('headline').textContent = replay ? 'Starting the replay…' : 'Planning the chore…';
+    $('meter').textContent = '';
+    $('choreName').textContent = '';
+    setProgress(null, replay ? 'green' : '');
+  }
+  function closeRun() {
+    clearTimeout(timer); timer = null; current = null;
+    $('run').hidden = true;
+    $('compose').hidden = false;
+    loadChores();
+  }
+  function setBadge(state) {
+    const [text, tone] = LABELS[state] || LABELS.running;
+    $('badgeText').textContent = text;
+    $('badge').className = 'badge' + (tone ? ' ' + tone : '');
+  }
+  function setProgress(percent, tone) {
+    const bar = $('progress');
+    bar.className = 'progress' + (percent === null ? ' busy' : '') + (tone ? ' ' + tone : '');
+    $('progressFill').style.width = percent === null ? '' : percent + '%';
+  }
+  function addSteps(steps) {
+    const log = $('log');
+    steps.forEach((s) => {
+      const li = document.createElement('li');
+      li.className = s.kind === 'check' ? (s.ok ? 'check' : 'fail') : (s.ok === false ? 'fail' : s.kind);
+      li.append(
+        Object.assign(document.createElement('span'), { className: 'dot' }),
+        Object.assign(document.createElement('span'), { className: 'text', textContent: s.text, title: s.text }),
+        Object.assign(document.createElement('span'), { className: 'who', textContent: s.who }),
+        Object.assign(document.createElement('span'), { className: 'secs', textContent: s.secs || '' })
+      );
+      log.appendChild(li);
+    });
+    while (log.children.length > 400) log.removeChild(log.firstChild);
+    if (steps.length) log.scrollTop = log.scrollHeight;
+  }
+  async function poll() {
+    clearTimeout(timer);
+    let snap;
+    try { snap = await api('/api/run?since=' + since); }
+    catch (e) { $('headline').textContent = 'Lost touch with Quiff: is its window still open?'; timer = setTimeout(poll, 1500); return; }
+    if (snap.state === 'idle') { closeRun(); return; }
+    if (current && snap.id !== current) current = snap.id;
+    lastChoreId = snap.chore && snap.chore.id;
+    addSteps(snap.steps || []);
+    since = snap.next || since;
+    const replay = snap.mode === 'replay';
+    const live = snap.state === 'running' && replay ? 'replaying' : snap.state;
+    setBadge(live);
+    $('headline').textContent = snap.headline || '';
+    $('meter').textContent = snap.meter || '';
+    $('choreName').textContent = snap.chore ? snap.chore.title : '';
+    const tone = snap.state === 'approval' || snap.state === 'failed' || snap.state === 'stopped' ? 'coral'
+      : (replay || snap.state === 'done') ? 'green' : '';
+    setProgress(typeof snap.progress === 'number' ? snap.progress : (snap.state === 'done' ? 100 : null), tone);
+    const asking = snap.state === 'approval' && snap.approval;
+    const appearing = asking && $('approval').hidden;
+    $('approval').hidden = !asking;
+    if (asking) {
+      $('approvalText').textContent = snap.approval.reason + '. Go ahead?';
+      $('yesAll').hidden = !snap.approval.every_row;
+      if (appearing) $(snap.approval.every_row ? 'yesAll' : 'yesOne').focus();
+    }
+    const finished = ['done', 'failed', 'stopped'].includes(snap.state);
+    $('stop').hidden = finished;
+    if (snap.state === 'done') showDone(snap);
+    if (snap.state === 'failed' || snap.state === 'stopped') showFailed(snap);
+    if (!finished) timer = setTimeout(poll, 400);
+  }
+  function showDone(snap) {
+    const s = snap.summary || {};
+    const teaching = snap.mode === 'teach';
+    let title = teaching ? 'Done' : 'Done again, exactly as taught';
+    if (s.rows) title = s.rows_passed + ' of ' + s.rows + ' rows done' + (s.rows_passed === s.rows ? ' · every row checked' : '');
+    else if (s.checks_passed && !s.checks_failed) title += ' · every check passed';
+    else if (s.no_checks) title += ' · no checks were given';
+    const calls = typeof s.calls === 'number' ? s.calls : snap.calls;
+    const bits = [calls + ' AI call' + (calls === 1 ? '' : 's')];
+    if (s.seconds) bits.push(Number(s.seconds).toFixed(1) + ' s');
+    bits.push(teaching ? 'saved to Your chores: next time it makes zero AI calls' : 'nothing new to learn');
+    $('doneTitle').textContent = title;
+    $('doneSub').textContent = bits.join(' · ');
+    $('done').hidden = false;
+    $('againIcon').replaceChildren(icon('replay'));
+  }
+  function showFailed(snap) {
+    const denied = snap.state === 'stopped';
+    $('failedTitle').textContent = denied ? 'Stopped, so nothing more was done.' : 'Quiff couldn’t finish this one.';
+    $('failedSub').textContent = denied ? 'Quiff left the page as it was when it stopped.'
+      : 'Here is what it said last. Nothing after the failed step was done.';
+    $('failedTail').textContent = (snap.tail || []).join('\n');
+    $('failedTail').hidden = !(snap.tail || []).length;
+    $('failed').hidden = false;
+  }
+  async function answer(reply) {
+    try { await post('/api/answer', { answer: reply }); $('approval').hidden = true; poll(); } catch (e) { /* the run moved on */ }
+  }
+  $('teach').addEventListener('click', teach);
+  $('sentence').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); teach(); } });
+  $('yesAll').addEventListener('click', () => answer('a'));
+  $('yesOne').addEventListener('click', () => answer('y'));
+  $('no').addEventListener('click', () => answer('n'));
+  $('stop').addEventListener('click', async () => { try { await post('/api/stop'); } catch (e) {} });
+  $('again').addEventListener('click', () => { if (lastChoreId) start({ mode: 'replay', id: lastChoreId, show: ui.show }); });
+  $('newChore').addEventListener('click', () => { $('sentence').value = ''; closeRun(); $('sentence').focus(); });
+  $('back').addEventListener('click', closeRun);
+  document.addEventListener('keydown', (e) => {
+    if ($('approval').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+    const key = e.key.toLowerCase();
+    if (key === 'a' && !$('yesAll').hidden) answer('a');
+    else if (key === 'y') answer('y');
+    else if (key === 'n') answer('n');
+  });
+
+  // ---------------------------------------------------------------- start
+  (async () => {
+    try { info = await api('/api/info'); }
+    catch (e) { showError('This page needs the address Quiff opened (it carries a key). Close it and start Quiff again.'); return; }
+    if (!(ui.app in info.apps)) ui.app = 'notepad';
+    $('foot').replaceChildren(document.createTextNode('Quiff runs on this computer only. '),
+      Object.assign(document.createElement('b'), { textContent: info.has_key ? 'Muse Spark is ready.' : 'No Meta API key yet:' }),
+      document.createTextNode(info.has_key ? '' : ' replays work, and teaching needs META_API_KEY in .env.'));
+    renderChips();
+    await loadChores();
+    const snap = await api('/api/run').catch(() => ({ state: 'idle' }));
+    if (snap.state && !['idle', 'done', 'failed', 'stopped'].includes(snap.state)) { openRun(snap.mode === 'replay'); current = snap.id; poll(); }
+    $('sentence').focus();
+  })();
+})();
+</script>
+</body>
+</html>

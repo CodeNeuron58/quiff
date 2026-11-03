@@ -178,3 +178,15 @@ async def test_replay_costs_no_model_calls(tmp_path):
     loop = FastLoop(observer, ReplayDecider(flow), StepLogger(tmp_path / "r.jsonl", "t"))
     result = await loop.run("goal", start_url="http://x/", subgoal="goal")
     assert result.model_calls == 0
+
+
+def test_number_boxes_are_not_mistaken_for_pins():
+    """A number box's role is "spinbutton": it contains "pin" but holds no secret."""
+    from quiff.loop import SENSITIVE_FIELD
+    from quiff.show import _SECRET_FIELD
+
+    for pattern in (SENSITIVE_FIELD, _SECRET_FIELD):
+        assert not pattern.search("spinbutton Quantity")
+        assert not pattern.search("link Pinned items")
+        for secret in ("textbox PIN", "textbox Enter your pin code", "textbox Pincode", "textbox Password"):
+            assert pattern.search(secret), secret

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import signal
 import sys
 
 from quiff import __version__
@@ -66,7 +67,24 @@ def main() -> None:
     observe.add_argument("url")
     observe.add_argument("--headed", action="store_true")
 
+    app = commands.add_parser("app", help="open Quiff's window: teach a chore, run it again",
+                              description="A page on this computer only (127.0.0.1): say or type "
+                                          "a chore, pick where it happens and an optional "
+                                          "spreadsheet, approve what can't be undone, and run "
+                                          "saved chores again with zero AI calls.")
+    app.add_argument("--port", type=int, default=8770)
+    app.add_argument("--no-browser", action="store_true", help="don't open the page")
+
     args = parser.parse_args()
+    if hasattr(signal, "SIGBREAK"):
+        # Windows: the Quiff app stops a run with Ctrl+Break; treat it like Ctrl+C so the
+        # run still closes its browser and overlay on the way out
+        signal.signal(signal.SIGBREAK, signal.default_int_handler)
+    if args.command == "app":
+        from quiff.app import serve
+
+        serve(port=args.port, open_browser=not args.no_browser)
+        return
     try:
         asyncio.run(_dispatch(args))
     except KeyError as exc:
