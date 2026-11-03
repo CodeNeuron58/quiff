@@ -20,13 +20,34 @@ from .observe.table import ActionRow, ActionTable
 
 # Words that make an action irreversible; the user must approve before it runs.
 # Matched as whole words, so "Postal code", "PayPal" and "Deleted items" pass.
+# A word list can't know every button: an irreversible control with an unusual
+# name still gets through (the README says so).
 RISKY_WORDS = ("send", "pay", "submit", "delete", "remove", "erase", "uninstall",
                "purchase", "buy", "post", "publish", "approve", "transfer", "confirm",
-               "place order", "checkout", "check out")
+               "place order", "checkout", "check out",
+               # money, deletion and account changes the first list let through
+               "payment", "order now", "book now", "donate", "subscribe", "unsubscribe",
+               "withdraw", "discard", "deactivate", "terminate", "factory reset")
+# Phrases with words in between ("Place your order", "Move to Trash", ...).
+RISKY_PHRASES = (
+    r"place\s+(?:your|my|the|this)\s+order",
+    r"move\s+(?:it\s+)?to\s+(?:the\s+)?(?:trash|bin|recycle\s+bin)",
+    r"empty\s+(?:the\s+)?(?:trash|bin|recycle\s+bin)",
+    r"cancel\s+(?:my\s+|your\s+|the\s+|this\s+)?(?:subscription|order|membership|plan"
+    r"|account|booking|reservation|payment)",
+    r"close\s+(?:my\s+|your\s+|the\s+|this\s+)?account",
+    r"merge\s+(?:pull\s+request|branch)",
+    r"(?:squash|rebase)\s+and\s+merge",
+)
 RISKY_PATTERN = re.compile(
-    r"\b(" + "|".join(re.escape(word).replace(r"\ ", r"\s+") for word in RISKY_WORDS) + r")\b",
+    r"\b(" + "|".join([re.escape(word).replace(r"\ ", r"\s+") for word in RISKY_WORDS]
+                      + list(RISKY_PHRASES)) + r")\b",
     re.IGNORECASE,
 )
+# The confirmation a save shows when the file already exists: "Yes" there
+# replaces the file, whichever way the save was started.
+OVERWRITE_DIALOG = re.compile(r"confirm save|already exists|overwrite|replace or skip", re.I)
+OVERWRITE_YES = {"yes", "replace the file in the destination"}
 # Keyboard shortcuts that commit something (Ctrl+Enter / Alt+S send mail in
 # Outlook; Shift+Delete deletes permanently), in the canonical parse_combo form.
 RISKY_COMBOS = {"ctrl+enter", "alt+s", "ctrl+d", "shift+delete", "ctrl+shift+delete"}
@@ -97,11 +118,18 @@ def _risky_name(name: str) -> bool:
 
 # What the risky word means for the user, said plainly. The reasons below are
 # what a person reads before answering y/n (in the terminal and on the pill).
-_CONSEQUENCES = (
-    (("delete", "remove", "erase", "uninstall"), "deletes it for good"),
-    (("pay", "purchase", "buy", "place order", "checkout", "check out"), "spends money"),
-    (("send", "transfer"), "sends it for good"),
-    (("submit", "post", "publish", "approve", "confirm"), "submits it for good"),
+_CONSEQUENCES = (  # checked in order against the matched words
+    (r"\bunsubscribe\b|\bcancel\b|\bterminate\b", "cancels it for good"),
+    (r"\bclose\b|\bdeactivate\b", "closes it for good"),
+    (r"\bmerge\b", "merges it for good"),
+    (r"\bdelete\b|\bremove\b|\berase\b|\buninstall\b|\btrash\b|\bbin\b|\bdiscard\b"
+     r"|\breset\b", "deletes it for good"),
+    (r"\bwithdraw\b", "moves money"),
+    (r"\bsubscribe\b", "signs you up"),
+    (r"\bpay\b|\bpayment\b|\bpurchase\b|\bbuy\b|\border\b|\bcheckout\b|\bcheck\s+out\b"
+     r"|\bbook\b|\bdonate\b", "spends money"),
+    (r"\bsend\b|\btransfer\b", "sends it for good"),
+    (r"\bsubmit\b|\bpost\b|\bpublish\b|\bapprove\b|\bconfirm\b", "submits it for good"),
 )
 _COMBO_CONSEQUENCES = {
     "ctrl+enter": "can send a message",
@@ -114,11 +142,17 @@ _COMBO_CONSEQUENCES = {
 
 def _consequence(name: str) -> str:
     match = RISKY_PATTERN.search(name or "")
-    word = " ".join(match.group(1).lower().split()) if match else ""
-    for words, consequence in _CONSEQUENCES:
-        if word in words:
+    words = " ".join(match.group(1).lower().split()) if match else ""
+    for pattern, consequence in _CONSEQUENCES:
+        if words and re.search(pattern, words):
             return consequence
     return "can't be undone"
+
+
+def _confirms_overwrite(table: ActionTable, row: ActionRow) -> bool:
+    """'Yes' in a "Confirm Save As" / "already exists" dialog replaces a file."""
+    return ((row.name or "").strip().lower() in OVERWRITE_YES
+            and bool(OVERWRITE_DIALOG.search(table.title or "")))
 
 
 def _key_name(combo: str) -> str:
@@ -160,6 +194,8 @@ def needs_approval(decision: Decision, table: ActionTable, focus: Focus | None =
         return None
     if _commits(row.role) and _risky_name(row.name):
         return f"Clicking \"{row.name}\" {_consequence(row.name)}"
+    if decision.action == "click" and _confirms_overwrite(table, row):
+        return f"Clicking \"{row.name}\" replaces an existing file"
     return None
 
 

@@ -14,7 +14,7 @@ Today's computer-use agents are slow because a large model thinks before and aft
 
 | Stage | What it does |
 |---|---|
-| **Plan** | Muse Spark (high reasoning) splits the task into subgoals: one call at the start. |
+| **Plan** | Muse Spark (high reasoning) writes a short plan of subgoals once, at the start. Every decision sees the plan as context; the loop doesn't step through the subgoals one by one. |
 | **Observe** | The screen becomes one numbered action table, e.g. `[12] button "Save" · enabled`, read from Windows UI Automation or Chrome's DevTools protocol. No screenshots. |
 | **Decide** | Muse Spark (minimal reasoning) answers one JSON-schema request per step: which action, which row, did the last step work, is the subgoal done. |
 | **Act** | Accessibility patterns (`Invoke`, `SetValue`) on Windows, DevTools input in Chrome, keyboard input as the fallback. Shared flows (Save As, menus, downloads) are driver skills. Irreversible actions wait for a human (see Safety). |
@@ -44,12 +44,13 @@ What the benchmark taught us: for a narrow, well-structured pick, more reasoning
 
 ## Safety by construction
 
-- **Approval guard.** Nothing irreversible runs without a human's yes (`--interactive`); without an approver, the run stops and says why. The guard covers:
-  - clicking Submit / Send / Pay / Delete / Place order and the like (whole words, on buttons, links and menu items, so "Postal code" or "PayPal" don't trigger it);
+- **Approval guard.** Actions that look irreversible wait for a human's yes (`--interactive`); without an approver, the run stops and says why. The guard covers:
+  - clicking Submit / Send / Pay / Delete / Place your order / Proceed to payment / Move to Trash / Cancel subscription / Unsubscribe / Merge pull request and the like (whole words, on buttons, links and menu items, so "Postal code", "PayPal" or a dialog's plain "Cancel" don't trigger it);
   - Enter or Space that would trigger such a control, judged by what holds keyboard focus (Enter in a form whose submit button is "Submit order" asks first);
   - Ctrl+Enter, Alt+S and Shift+Delete, plus Delete on desktop items;
   - every download;
-  - any Save As that would overwrite a file or write outside the task's folder.
+  - any Save As that would overwrite a file or write outside the task's folder, and "Yes" in a "Confirm Save As" dialog, however the save was started.
+- **What the guard can't see.** It judges controls by their names, so an irreversible button with an unusual name can still get through. Navigating to a URL isn't checked, and a save typed by hand into a Save dialog is only caught at the overwrite confirmation, not when it writes a new file outside the task folder.
 - **Only its own windows.** Quiff follows the window it launched and the dialogs that window owns. It refuses to start while Notepad is open, never closes or edits the user's windows, and never sends a keystroke unless its own window is in front.
 - **Its own browser.** Every run uses a temporary Chrome profile on a port Chrome picks itself, never an existing browser.
 - **Secrets.** Text typed into password-like fields is redacted in step logs. Recorded flows keep real values so replay works; they stay local in the gitignored `runs/` folder.
@@ -94,7 +95,7 @@ The best recorded run per task:
 |---|---|---|---|---|
 | b05 site login | typed credentials, submitted | 3 | 18.7 s | PASS (2 code checks) |
 | b01 Google search | typed the query, pressed Enter | 3 | 13.3 s | PASS (URL check) |
-| b03 research task | navigated Wikipedia, answered "1991" | 3 | 19.5 s | PASS (answer check) |
+| b03 Wikipedia fact | went to Wikipedia and answered "1991" (from the model's own knowledge: Quiff doesn't pass page text to the model yet) | 3 | 19.5 s | PASS (answer check) |
 | b04 order form | filled 6 fields in batches, stopped at the approval guard on "Submit order", submitted after approval | 8 | 19.1 s | PASS (3 page checks) |
 | d01 Notepad save (desktop) | typed the document, drove the Save As dialog via a driver skill | 2 | 20.0 s | PASS (file check) |
 | d01 replay | same task, **0 model calls** | 2 | 11.1 s | PASS |
@@ -159,6 +160,7 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 **Next:**
 - per-step recall inside model runs;
 - reading page text and content below the fold, for answer tasks;
+- a Muse Spark second opinion on any button the approval guard's word list doesn't know;
 - the remaining tasks (b02, d04–d10) and more runs per task;
 - a first Muse Spark Open run;
 - a decision model trained on the step logs.

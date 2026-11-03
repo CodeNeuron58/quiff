@@ -180,3 +180,53 @@ def test_key_reasons_name_keys_the_way_people_write_them():
     on_file = Focus(role="listitem", name="report.docx")
     assert needs_approval(press("Delete"), desktop_table(), focus=on_file) == \
         'Pressing Delete deletes "report.docx"'
+
+
+# ------------------------------------------------------------- the review's misses
+
+@pytest.mark.parametrize("role, name", [
+    ("button", "Place your order"), ("button", "Proceed to payment"),
+    ("menu item", "Move to Trash"), ("button", "Empty Recycle Bin"),
+    ("button", "Merge pull request"), ("button", "Squash and merge"),
+    ("button", "Cancel subscription"), ("link", "Unsubscribe"),
+    ("button", "Close account"), ("button", "Discard draft"), ("button", "Order now"),
+])
+def test_the_guard_now_catches_what_the_review_found(role, name):
+    table = browser_table(row(1, role, name))
+    assert needs_approval(Decision(action="click", row=1), table)
+
+
+@pytest.mark.parametrize("role, name", [
+    ("button", "Cancel"), ("tree item", "Recycle Bin"), ("link", "Order history"),
+    ("link", "Subscriptions"), ("button", "Merge cells"), ("link", "Booking details"),
+    ("button", "Close"),
+])
+def test_wider_list_still_leaves_everyday_controls_alone(role, name):
+    table = browser_table(row(1, role, name))
+    assert needs_approval(Decision(action="click", row=1), table) is None
+
+
+@pytest.mark.parametrize("name, expected", [
+    ("Place your order", 'Clicking "Place your order" spends money'),
+    ("Move to Trash", 'Clicking "Move to Trash" deletes it for good'),
+    ("Cancel subscription", 'Clicking "Cancel subscription" cancels it for good'),
+    ("Merge pull request", 'Clicking "Merge pull request" merges it for good'),
+])
+def test_new_reasons_say_what_would_happen(name, expected):
+    table = browser_table(row(1, "button", name))
+    assert needs_approval(Decision(action="click", row=1), table) == expected
+
+
+def test_yes_in_a_confirm_save_as_dialog_needs_approval():
+    # a save typed by hand into the dialog skips the save_as check; the
+    # overwrite confirmation is where it is caught
+    table = ActionTable(title="Confirm Save As", rows=(row(1, "button", "Yes"),
+                                                       row(2, "button", "No")))
+    assert needs_approval(Decision(action="click", row=1), table) == \
+        'Clicking "Yes" replaces an existing file'
+    assert needs_approval(Decision(action="click", row=2), table) is None
+
+
+def test_yes_elsewhere_is_routine():
+    table = ActionTable(title="Notepad", rows=(row(1, "button", "Yes"),))
+    assert needs_approval(Decision(action="click", row=1), table) is None

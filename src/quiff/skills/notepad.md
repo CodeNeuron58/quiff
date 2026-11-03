@@ -25,5 +25,6 @@ How Notepad (Windows 11 store app) exposes itself and how to drive it.
 - Notepad restores session tabs on start: blank `Untitled` tabs from earlier
   runs may be present. Ignore them unless they hold the target document.
 - A title starting with `*` means unsaved changes.
-- The Save-As dialog may confirm overwrites ("Confirm Save As") — answer
+- The Save-As dialog may confirm overwrites ("Confirm Save As"); the approval
+  guard asks the person before "Yes" is clicked there. Answer
   Yes only when the task intends to replace that exact file.
