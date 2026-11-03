@@ -1,0 +1,414 @@
+{
+  "provenance": {
+    "commit": "0b6e4ed",
+    "uncommitted_changes": false,
+    "measured_at": "2026-11-03 06:39:41 +0530"
+  },
+  "runs_per_mode": 5,
+  "results": [
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 39.86,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 163,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 4609,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 163,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 8462,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 6016,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 14591,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 3267
+        }
+      ]
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 23.53,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 136,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 6080,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 136,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 6291,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 4634,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 3587
+        }
+      ]
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 38.65,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 139,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 4908,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 126,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 9884,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 5414,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 12461,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 3786
+        }
+      ]
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 24.4,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 163,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 4849,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 163,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 6795,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 5131,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 3642
+        }
+      ]
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 27.88,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 132,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 6920,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 132,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 7092,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 6022,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 4837
+        }
+      ]
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 14.15,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login button clicked after entering credentials; assuming login complete, no table rows to verify further. \u00b7 muse-spark-1.3 \u00b7 4951 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 15.97,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked OK, now on Secure Area page \u00b7 muse-spark-1.3 \u00b7 3445 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 15.79,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked OK after entering credentials; assuming login succeeded \u00b7 muse-spark-1.3 \u00b7 4803 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 14.53,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "muse-spark-1.3 \u00b7 2571 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 16.7,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked OK, assuming secure area reached \u00b7 muse-spark-1.3 \u00b7 4686 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.16,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.37,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.02,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.3,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 1.92,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    }
+  ],
+  "summary": {
+    "slow": {
+      "runs": 5,
+      "successes": 5,
+      "median_s": 27.88,
+      "model_calls": [
+        5,
+        4,
+        5,
+        4,
+        4
+      ]
+    },
+    "quiff": {
+      "runs": 5,
+      "successes": 5,
+      "median_s": 15.79,
+      "model_calls": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    },
+    "replay": {
+      "runs": 5,
+      "successes": 5,
+      "median_s": 2.16,
+      "model_calls": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}

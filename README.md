@@ -53,25 +53,25 @@ What the benchmark taught us: at *low* reasoning effort only 55% of replies were
 Setup:
 - **Task:** one login task on a local, deterministic page (`spikes/race_local.py`).
 - **Browser:** a fresh headless Chrome for every run.
-- **Runs:** 5 per mode, measured Nov 3, 2026 at commit `270ab9e`.
-- **Data:** `results/race-local-2026-11-03-0613-fair.json`.
+- **Runs:** 5 per mode, measured Nov 3, 2026 at commit `0b6e4ed`.
+- **Data:** `results/race-local-2026-11-03-0639-final.json`.
 
-| Mode | How it works | Success | Median time (successful runs) | Model calls per run |
+| Mode | How it works | Success | Median time | Model calls per run |
 |---|---|---|---|---|
-| Screenshot agent | a screenshot + one Muse Spark vision call per step, pixel clicks (how today's computer-use agents work) | 4/5 | 41.9 s | 4–5 |
-| **Quiff** | the action table + Muse Spark at minimal reasoning | **5/5** | **16.7 s** | 4 |
-| **Replay** | the flow Quiff recorded, re-run | **5/5** | **1.9 s** | **0** |
+| Screenshot agent | a screenshot + one Muse Spark vision call per step, pixel clicks (how today's computer-use agents work) | 5/5 | 27.9 s | 4–5 |
+| **Quiff** | the action table + Muse Spark at minimal reasoning | **5/5** | **15.8 s** | 4 |
+| **Replay** | the flow Quiff recorded, re-run | **5/5** | **2.2 s** | **0** |
 
 What it shows:
-- **Quiff finished about 2.5× faster** than the screenshot agent, with the same number of model calls: each Quiff call carries a small text table instead of an image.
-- **Replay was about 22× faster,** with no model calls at all.
-- **The screenshot agent's one failure** was the API timing out on its image calls.
+- **Every mode completed every run.**
+- **Quiff was about 1.8× faster** than the screenshot agent, with the same number of model calls: each Quiff call carries a small text table instead of an image.
+- **Replay was about 13× faster** than the screenshot agent, and 7× faster than Quiff's first run, with no model calls at all.
 
 Caveats:
-- **It's one task on one machine,** and model latency varies with load. Quiff's median ranged from 14.3 s to 16.7 s across the day's batches.
-- **The screenshot agent is our stand-in** built on the same Muse Spark model, not a third-party product.
+- **It's one simple task on one machine,** and model latency varies with load.
+- **The screenshot agent is our stand-in** built on the same Muse Spark model, not a third-party product. It gets the same typing, key handling, settle-and-retry and token budget as Quiff.
 - **Timings include launching Chrome.**
-- **Every batch is in [`results/`](results/README.md),** including two run before the harness was made fair, with what changed.
+- **Every batch from the day is in [`results/`](results/README.md),** including earlier ones run before the harness was made fair, with what changed in each.
 
 ### Task runs (live, Nov 1–2, 2026, dev machine in India)
 

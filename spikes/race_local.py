@@ -76,8 +76,19 @@ class Handler(BaseHTTPRequestHandler):
             self._send(FAIL_PAGE)
 
 
+class QuietServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        # Chrome resets its keep-alive connections when the browser closes:
+        # expected at the end of every run, not an error worth a traceback
+        import sys as _sys
+
+        if isinstance(_sys.exc_info()[1], (ConnectionResetError, ConnectionAbortedError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def serve() -> ThreadingHTTPServer:
-    server = ThreadingHTTPServer(("127.0.0.1", 8765), Handler)
+    server = QuietServer(("127.0.0.1", 8765), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
 
