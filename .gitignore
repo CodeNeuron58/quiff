@@ -8,6 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Overlay app dependencies (npm install in overlay/)
+node_modules/
 plan/
 context/
 

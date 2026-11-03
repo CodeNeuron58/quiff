@@ -158,6 +158,7 @@ async def run_task(
     rescuer: Decider | None = None,
     approver=None,
     planned: list[str] | None = None,
+    show=None,
 ) -> TaskRun:
     """Run one task: sandbox, loop, then the automatic checks."""
     sandbox = setup_sandbox(task)
@@ -177,7 +178,7 @@ async def run_task(
 
     loop = FastLoop(observer, decider, logger, max_steps=max_steps, rescuer=rescuer,
                     approver=approver, verify_after_done=verify_after_done,
-                    write_root=sandbox)
+                    write_root=sandbox, show=show)
     subgoal = "; ".join(planned) if planned else task.goal
     # the app's skill file rides along on every decision: written knowledge
     # of how this app exposes itself, its shared flows, and its quirks

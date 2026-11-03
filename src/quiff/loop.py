@@ -19,6 +19,7 @@ from .decide import Decision, Decider
 from .learn import StepLogger
 from .observe.browser import BrowserObserver
 from .observe.table import ActionTable
+from .show import Show, describe, target_rect
 from .verify import LoopDetector
 
 MAX_STEPS = 25
@@ -70,8 +71,10 @@ class FastLoop:
         approver=None,
         verify_after_done=None,
         write_root=None,
+        show: Show | None = None,
     ) -> None:
         self.observer = observer
+        self.show = show or Show()  # the on-screen overlay; the base does nothing
         self.decider = decider
         self.logger = logger
         self.max_steps = max_steps
@@ -97,6 +100,7 @@ class FastLoop:
         detector = LoopDetector()
         failed_acts = 0
         answer: str | None = None
+        self.show.state("working", "Reading the screen")
 
         if start_url:
             observe_start = time.perf_counter()
@@ -106,11 +110,16 @@ class FastLoop:
             observe_start = time.perf_counter()
             table = await self.observer.read()
             observe_ms = int((time.perf_counter() - observe_start) * 1000)
+        if self.show.active and hasattr(self.observer, "bring_to_front"):
+            # the overlay must point at a window you can see
+            if not await self.observer.bring_to_front():
+                self.show.state("unsure", "Chrome is behind another window · click it to watch")
 
         stop_reason = "max steps reached"
         success = False
         waits = 0
         force_rescue = False
+        rescue_why = ""
         corrected = False
         last_result: str | None = None
         performed: dict[tuple[str, str], int] = {}
@@ -138,7 +147,8 @@ class FastLoop:
                         break
                     try:
                         decision = await self._ask_rescuer(goal, subgoal, table, history,
-                                                           last_result, progress)
+                                                           last_result, progress,
+                                                           why="the decision model failed")
                     except Exception as exc:
                         stop_reason = f"decider and rescuer failed: {first_error} / {exc}"
                         success = False
@@ -148,7 +158,9 @@ class FastLoop:
             if (force_rescue or decision.confidence < LOW_CONFIDENCE) and self._can_rescue():
                 try:
                     decision = await self._ask_rescuer(goal, subgoal, table, history,
-                                                       last_result, progress)
+                                                       last_result, progress,
+                                                       why=rescue_why if force_rescue
+                                                       else "low confidence")
                 except Exception as exc:
                     decision = Decision(action="done", subgoal_done=False, confidence=0.0,
                                         note=f"rescuer failed: {exc}")
@@ -162,11 +174,13 @@ class FastLoop:
                 if waits > MAX_WAITS and self._can_rescue():
                     try:
                         decision = await self._ask_rescuer(goal, subgoal, table, history,
-                                                           last_result, progress)
+                                                           last_result, progress,
+                                                           why="the screen kept changing")
                     except Exception as exc:
                         decision = Decision(action="done", subgoal_done=False, confidence=0.0,
                                             note=f"rescuer failed: {exc}")
                 if decision.action == "wait":
+                    self.show.state("working", "Waiting for the screen to settle")
                     self._log(step_no, decision, None, table, decide_ms, observe_ms)
                     if waits > 2 * MAX_WAITS:
                         stop_reason = "waited too long for the expected screen"
@@ -186,6 +200,7 @@ class FastLoop:
                     corrected += 1
                     last_result = f"the checks disagree — the task is NOT complete: {feedback}. Fix it."
                     stop_reason = "correction round after failed checks"
+                    self.show.state("unsure", "Checks disagree · correcting")
                     decision = Decision(action="wait", note="checks failed; correcting")
                     self._log(step_no, decision, None, table, decide_ms, observe_ms)
                     await self.observer.wait_settled()
@@ -210,7 +225,17 @@ class FastLoop:
                     focus = await focus_info(self.observer)
             approval_reason = needs_approval(decision, table, focus=focus,
                                              write_root=self.write_root)
+            row = table.by_index(decision.row) if decision.row is not None else None
+            line, chip = describe(decision, row)
+            if "rescued" in (decision.note or ""):
+                chip = "Rescuer · " + chip
+            rect = (await target_rect(self.observer, row)
+                    if self.show.active and row is not None else None)
             if approval_reason:
+                self.show.state("approval", line, guard=approval_reason)
+                if rect is not None:  # parks on the target without clicking
+                    self.show.target(rect, "Needs approval · " + chip.split(" · ")[-1],
+                                     kind="approval", ripple=False)
                 approved = False
                 if self.approver is not None:
                     try:
@@ -225,6 +250,14 @@ class FastLoop:
                     decision, note=f"{decision.note} · approved by user".strip(" ·")
                 )
 
+            self.show.state("working", line)
+            if rect is not None:
+                # the action lands as the ghost cursor arrives
+                arrival = self.show.target(rect, chip, kind="working",
+                                           ripple=decision.action in ("click", "type", "select"))
+                await asyncio.sleep(arrival)
+            else:
+                self.show.clear_target()
             result = await act(self.observer, table, decision)
             history.append(decision)
             if result.ok and decision.row is not None:
@@ -240,6 +273,7 @@ class FastLoop:
                 if failed_acts >= 2:
                     if self._can_rescue():
                         force_rescue = True  # the frontier model picks the next step
+                        rescue_why = "an action failed twice"
                         failed_acts = 0
                     else:
                         stop_reason = f"acting failed twice: {result.detail}"
@@ -253,6 +287,7 @@ class FastLoop:
             if detector.check(decision.action, ref or "", table.title):
                 if not loop_rescued and self._can_rescue():
                     force_rescue = True  # one rescue for the first loop, then stop
+                    rescue_why = "the same step repeated"
                     loop_rescued = True
                 else:
                     stop_reason = ("loop detected: the same action repeats on the same "
@@ -262,8 +297,11 @@ class FastLoop:
 
             observe_start = time.perf_counter()
             await self.observer.wait_settled()
+            before = (table.url, table.title)
             table = await self.observer.read()
             observe_ms = int((time.perf_counter() - observe_start) * 1000)
+            if (table.url, table.title) != before:
+                self.show.clear_target()  # the box would point into a page that's gone
 
         elapsed = time.perf_counter() - started
         return LoopResult(
@@ -285,8 +323,10 @@ class FastLoop:
         return await self.decider.decide(goal, subgoal or "", table, history,
                                          last_result=last_result, progress=progress)
 
-    async def _ask_rescuer(self, goal, subgoal, table, history, last_result, progress):
+    async def _ask_rescuer(self, goal, subgoal, table, history, last_result, progress,
+                           why: str = "low confidence"):
         self._rescues += 1
+        self.show.state("unsure", f"Rescuer took over · {why}")
         if _is_model(self.rescuer):
             self._model_calls += 1
         decision = await self.rescuer.decide(goal, subgoal or "", table, history,

@@ -106,13 +106,15 @@ Honest caveats:
 
 ## Try it
 
-Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), Windows, and Chrome.
+Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), Windows, and Chrome (plus Node.js for `--show`).
 
 ```sh
 uv sync
 echo META_API_KEY=your-key > .env      # from ai.developer.meta.com
 uv run quiff tasks                     # list the 20-task suite
 uv run quiff run b05 --headed          # the model logs into a public test site
+cd overlay && npm install && cd ..     # once, for --show
+uv run quiff run b05 --show            # watch it: status pill and ghost cursor
 uv run quiff run b04 --interactive --headed   # the approval guard asks before "Submit order"
 uv run quiff run d01                   # records a replayable flow (close Notepad first)
 uv run quiff run d01 --replay          # then replay it: no model calls
@@ -123,6 +125,13 @@ uv run python spikes/model_probe.py    # the go/no-go benchmark
 
 `quiff run` drives a real browser window or app; every step is logged to `runs/` as JSONL.
 
+`--show` puts Quiff's overlay on screen:
+- **Status pill:** says what Quiff is doing. Its four states are working, unsure (the rescuer took over), approval needed, and your turn.
+- **Ghost cursor:** glides to each target and highlights it just before Quiff acts.
+- **Safe to watch:** the real mouse never moves, and typed passwords are never shown. The overlay is click-through, never takes focus, and screen recorders capture it.
+
+The overlay is a small Electron app in `overlay/`. `npm run demo` there previews it without running a task.
+
 ## What's real vs what's next
 
 **Working today:**
@@ -131,12 +140,12 @@ uv run python spikes/model_probe.py    # the go/no-go benchmark
 - the approval guard and ownership-based window safety;
 - rescue escalation with a budget, and correction rounds from failed checks;
 - JSONL step logs, plus flow recording and zero-model-call replay;
-- the race and regression harnesses, with provenance.
+- the race and regression harnesses, with provenance;
+- the on-screen overlay (`--show`): status pill, ghost cursor, highlight box, approval edge glow.
 
 **Next:**
 - per-step recall inside model runs;
 - reading page text and content below the fold, for answer tasks;
-- an on-screen status bar;
 - the remaining tasks (b02, d04–d10) and more runs per task;
 - a first Muse Spark Open run;
 - a decision model trained on the step logs.

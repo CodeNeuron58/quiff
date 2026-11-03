@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'">
+<title>Quiff overlay</title>
+<link rel="stylesheet" href="node_modules/@fontsource/ibm-plex-sans/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/ibm-plex-sans/500.css">
+<link rel="stylesheet" href="node_modules/@fontsource/ibm-plex-sans/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/ibm-plex-mono/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/ibm-plex-mono/500.css">
+<link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <!-- approval: a 3 px coral edge around the whole screen -->
+  <div id="glow"></div>
+
+  <!-- the highlight box and its chip (above-left, so the cursor never covers it) -->
+  <div id="highlight">
+    <div class="box"></div>
+    <div class="chip"></div>
+  </div>
+
+  <!-- the ghost cursor; its hotspot is the element's (0, 0) -->
+  <div id="cursor">
+    <span class="fx">
+      <span class="ring ring0"></span>
+      <span class="ring ring1"></span>
+    </span>
+    <svg class="arrow" width="24" height="24" viewBox="0 0 24 24">
+      <path d="M3.6 2.9 L20.1 9.5 Q21.5 10.1 20.1 10.7 L13.5 13 Q12.9 13.2 12.7 13.8 L10.5 20.3 Q9.9 21.7 9.3 20.3 L2.9 3.6 Q2.5 2.5 3.6 2.9 Z"
+            fill="#1C1D20" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+    <span class="mark">Q</span>
+  </div>
+
+  <!-- the status pill (v3) -->
+  <div id="pill">
+    <div class="row">
+      <span class="chip"><span class="dot"></span><span class="label"></span></span>
+      <span class="line"></span>
+      <span class="brand">Quiff</span>
+    </div>
+    <div class="approval">
+      <div class="guard"><span class="muted">Guard</span><span class="guard-text"></span></div>
+      <div class="answer">
+        <span class="muted">Answer in terminal</span>
+        <span class="key">y</span><span class="faint">/</span><span class="key">n</span>
+      </div>
+      <div class="wait">0:00</div>
+    </div>
+    <div class="bar"><span></span></div>
+  </div>
+
+  <!-- off-screen copy of the pill's text, used to size the pill to its words -->
+  <div id="measure"><span class="label"></span><span class="line"></span><span class="brand">Quiff</span></div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

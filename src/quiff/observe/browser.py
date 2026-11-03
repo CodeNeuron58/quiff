@@ -135,6 +135,73 @@ class BrowserError(RuntimeError):
     pass
 
 
+def _top_level_windows() -> list[int]:
+    """Visible top-level windows (Windows only; empty elsewhere)."""
+    import ctypes
+    from ctypes import wintypes
+
+    if not hasattr(ctypes, "windll"):
+        return []
+    user32 = ctypes.windll.user32
+    found: list[int] = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def on_window(hwnd, _lparam):
+        if user32.IsWindowVisible(hwnd):
+            found.append(hwnd)
+        return True
+
+    user32.EnumWindows(on_window, 0)
+    return found
+
+
+def _class_name(hwnd: int) -> str:
+    import ctypes
+
+    buf = ctypes.create_unicode_buffer(256)
+    ctypes.windll.user32.GetClassNameW(hwnd, buf, 256)
+    return buf.value
+
+
+def _window_rect(hwnd: int) -> tuple[int, int, int, int]:
+    import ctypes
+    from ctypes import wintypes
+
+    rect = wintypes.RECT()
+    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    return rect.left, rect.top, rect.right, rect.bottom
+
+
+def _click_through(hwnd: int) -> bool:
+    """Overlay windows (Quiff's own, too) ignore the mouse; Chrome's never do."""
+    import ctypes
+
+    WS_EX_TRANSPARENT = 0x20
+    ex_style = ctypes.windll.user32.GetWindowLongW(hwnd, -20)  # GWL_EXSTYLE
+    return bool(ex_style & WS_EX_TRANSPARENT)
+
+
+def _content_child(hwnd: int) -> int | None:
+    """Chrome's page-content child window (exactly the viewport), if it has one."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    found: list[int] = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def on_child(child, _lparam):
+        if _class_name(child) == "Chrome_RenderWidgetHostHWND" and user32.IsWindowVisible(child):
+            left, top, right, bottom = _window_rect(child)
+            if right > left and bottom > top:
+                found.append(child)
+                return False
+        return True
+
+    user32.EnumChildWindows(hwnd, on_child, 0)
+    return found[0] if found else None
+
+
 def _kill_processes_using(profile_dir: str) -> None:
     """End every chrome.exe whose command line names this private profile.
 
@@ -284,6 +351,8 @@ class BrowserObserver:
         self._user_data_dir: str | None = None
         self._target_id: str | None = None
         self._cdp: CDPConnection | None = None
+        self._windows_before: set[int] = set()  # top-level windows before our Chrome existed
+        self._chrome_hwnd: int | None = None
 
     async def open(self, url: str) -> ActionTable:
         """Start Chrome if needed, open a tab at `url`, and read its action table."""
@@ -498,9 +567,76 @@ class BrowserObserver:
         if self._process:
             return
         self._user_data_dir = tempfile.mkdtemp(prefix="quiff-chrome-")
+        self._windows_before = set(_top_level_windows())  # our window is whatever appears after
+        self._chrome_hwnd = None
         self._process = subprocess.Popen(
             self.launch_flags(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
+
+    def _our_window(self) -> int | None:
+        """Our Chrome window (headed only): the Chrome window that appeared after
+        we launched. The user's own Chrome windows existed before and are never
+        picked; click-through windows such as Quiff's overlay (also Chromium)
+        neither."""
+        import ctypes
+
+        if self.headless or not hasattr(ctypes, "windll"):
+            return None
+        if not (self._chrome_hwnd and ctypes.windll.user32.IsWindow(self._chrome_hwnd)):
+            ours = [h for h in _top_level_windows()
+                    if h not in self._windows_before and _class_name(h) == "Chrome_WidgetWin_1"
+                    and not _click_through(h)]
+            if not ours:
+                return None
+            area = lambda h: (lambda r: (r[2] - r[0]) * (r[3] - r[1]))(_window_rect(h))
+            self._chrome_hwnd = max(ours, key=area)
+        return self._chrome_hwnd
+
+    async def bring_to_front(self) -> bool:
+        """Show mode: put our Chrome window in front, so the overlay points at a
+        page you can see. Chrome is asked first; if Windows' focus rules keep it
+        behind, the same Alt-tap unlock the desktop side uses is applied."""
+        import ctypes
+
+        try:
+            await self.call("Page.bringToFront")
+        except Exception:
+            pass
+        hwnd = self._our_window()
+        if hwnd is None:
+            return False
+        user32 = ctypes.windll.user32
+        for _ in range(3):
+            await asyncio.sleep(0.2)
+            if user32.GetForegroundWindow() == hwnd:
+                return True
+            if user32.IsIconic(hwnd):
+                user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+            user32.keybd_event(0x12, 0, 0, 0)  # Alt down
+            user32.SetForegroundWindow(hwnd)
+            user32.keybd_event(0x12, 0, 0x0002, 0)  # Alt up
+        return user32.GetForegroundWindow() == hwnd
+
+    def viewport_screen_rect(self) -> tuple[int, int, int, int] | None:
+        """Where the page's viewport is on screen (left, top, right, bottom), headed only.
+
+        Chrome draws the page in a child window that is exactly the viewport;
+        if that child isn't there, the client area's bottom part is used.
+        """
+        import ctypes
+        from ctypes import wintypes
+
+        if self._our_window() is None:
+            return None
+        user32 = ctypes.windll.user32
+        child = _content_child(self._chrome_hwnd)
+        if child is not None:
+            return _window_rect(child)
+        client = wintypes.RECT()
+        user32.GetClientRect(self._chrome_hwnd, ctypes.byref(client))
+        origin = wintypes.POINT(0, 0)
+        user32.ClientToScreen(self._chrome_hwnd, ctypes.byref(origin))
+        return (origin.x, origin.y, origin.x + client.right, origin.y + client.bottom)
 
     def launch_flags(self) -> list[str]:
         """The full Chrome command line for this observer."""

@@ -1,0 +1,18 @@
+{
+  "name": "quiff-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quiff's on-screen overlay: status pill, ghost cursor, highlight box. Started by `quiff run --show`.",
+  "license": "Apache-2.0",
+  "main": "main.js",
+  "scripts": {
+    "demo": "node demo.js"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0"
+  },
+  "devDependencies": {
+    "electron": "44.9.1"
+  }
+}

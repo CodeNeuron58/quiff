@@ -28,6 +28,9 @@ def main() -> None:
                      help="Muse Spark reasoning effort for decisions (default: minimal)")
     run.add_argument("--interactive", action="store_true",
                      help="ask in the terminal before irreversible actions")
+    run.add_argument("--show", action="store_true",
+                     help="show the on-screen overlay (status pill, ghost cursor); "
+                          "opens Chrome headed. Needs `npm install` in overlay/ once")
 
     observe = commands.add_parser("observe", help="print the action table for a URL")
     observe.add_argument("url")
@@ -69,6 +72,16 @@ async def _dispatch(args: argparse.Namespace) -> None:
         from quiff.tasks import get_task, load_tasks, run_task
 
         task = get_task(args.task_id, load_tasks())
+        show = None
+        if args.show:
+            # first, before any observer: it makes Quiff read real screen pixels
+            from quiff.show.overlay import Overlay, OverlayError
+
+            try:
+                show = Overlay()
+            except OverlayError as exc:
+                raise SystemExit(f"quiff: {exc}")
+            args.headed = True  # the overlay points at a window you can see
         if args.replay:
             from quiff.recall import ReplayDecider, load_flow
 
@@ -112,6 +125,8 @@ async def _dispatch(args: argparse.Namespace) -> None:
 
         planned = None
         if not args.replay and not args.scripted:
+            if show is not None:
+                show.state("working", "Planning the task")
             try:
                 from quiff.plan import plan
 
@@ -120,13 +135,20 @@ async def _dispatch(args: argparse.Namespace) -> None:
             except Exception as exc:
                 print(f"plan     (unavailable: {exc})")
 
+        run = None
         try:
             run = await run_task(task, decider, observer, max_steps=args.max_steps,
                                  rescuer=rescuer if not args.replay and not args.scripted else None,
                                  approver=approver,
-                                 planned=planned)
+                                 planned=planned,
+                                 show=show)
         finally:
+            if show is not None:
+                show.state("yourturn", _ending_line(run))
+                await asyncio.sleep(3.5)  # let the ending be seen before the window closes
             await observer.stop()
+            if show is not None:
+                show.close()
         print(f"task     {run.task.id} ({run.task.split})")
         mode = ("replay" if args.replay else "scripted") if args.scripted or args.replay else "model"
         print(f"mode     {mode}")
@@ -141,6 +163,18 @@ async def _dispatch(args: argparse.Namespace) -> None:
         if not run.success:
             raise SystemExit(1)
         return
+
+
+def _ending_line(run) -> str:
+    """The pill's last words: what happened, now that control is back with you."""
+    if run is None:
+        return "Run stopped · you have control"
+    if run.success:
+        return "Done · all checks pass"
+    reason = run.loop.stop_reason
+    if reason.startswith("needs approval"):
+        return "Stopped · not approved · you have control"
+    return f"Not done · {reason}"
 
 
 def _script_for(task) -> list[MatchStep]:
