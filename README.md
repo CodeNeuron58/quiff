@@ -29,8 +29,8 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="quiff batch filling ten orders from a spreadsheet: Muse Spark does row 1, the approval guard asks before Submit, rows 2 to 10 replay with zero AI calls" width="760"><br>
-  <sub>Ten orders from a spreadsheet: Muse Spark learns row 1, the guard asks before <i>Submit</i>, rows 2–10 replay with zero AI calls</sub>
+  <img src="docs/demo.gif" alt="quiff batch typing ten purchase orders from a spreadsheet into a demo supplier portal: Muse Spark does row 1, the approval guard asks before Submit order, rows 2 to 10 replay with zero AI calls" width="760"><br>
+  <sub>Ten purchase orders from a spreadsheet into a demo supplier portal: Muse Spark learns row 1 (sped up 4×), the guard asks before <i>Submit order</i>, rows 2–10 replay at real speed with zero AI calls</sub>
 </p>
 <!-- When the demo video is up, add this line under the GIF:
 <p align="center"><sub>▶ <a href="https://youtu.be/VIDEO_ID">Watch the 3-minute demo</a></sub></p>
@@ -83,12 +83,12 @@ uv run quiff do "Log in with username tomsmith and password SuperSecretPassword!
     --url https://the-internet.herokuapp.com/login --check-url "secure$" --headed
 ```
 
-Or teach it the chore from the GIF. Start the local order form in a second terminal (`uv run python spikes/serve_forms.py`), then:
+Or teach it the chore from the GIF. Start the demo supplier portal in a second terminal (`uv run python spikes/serve_portal.py`), then:
 
 ```bash
-uv run quiff batch "Fill in the pizza order form: name {name}, phone {phone}, email {email}, size {size}, toppings cheese and onion, comments '{comments}'. Then submit it." \
-    --url http://127.0.0.1:8765/order --data tasks/batch/orders.csv \
-    --check-text '"custname": "{name}"' --interactive --show
+uv run quiff batch "Fill in the purchase order: store {store}, contact {contact}, phone {phone}, item {item}, quantity {quantity}, delivery {delivery}, notes '{notes}'. Then submit it." \
+    --url http://127.0.0.1:8766/orders/new --data tasks/batch/purchase-orders.csv \
+    --check-text "Store: {store}" --check-text "Quantity: {quantity}" --interactive --show
 ```
 
 At the approval, answer `a` to approve *Submit order* for every row. `--show` turns on the overlay; run `npm install` in `overlay/` once first.
