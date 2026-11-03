@@ -28,6 +28,7 @@ class Show:
     """The engine's view of the overlay. This base does nothing."""
 
     active = False  # True when something is really on screen (worth finding targets for)
+    context = ""    # shown with every meter reading, e.g. "Row 5 of 10" in a batch
 
     def state(self, kind: str, line: str, guard: str = "") -> None:
         """kind: working | unsure | approval | yourturn; `line` is the pill's sentence."""
@@ -46,6 +47,11 @@ class Show:
 
     def close(self) -> None:
         """Remove everything from the screen."""
+
+
+def with_context(context: str, text: str) -> str:
+    """The meter's text with the run's context in front: 'Row 5 of 10 · Replay'."""
+    return " · ".join(part for part in (context, text) if part)
 
 
 def meter_text(decision: Decision) -> str:

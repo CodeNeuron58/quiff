@@ -20,7 +20,7 @@ import subprocess
 import threading
 from pathlib import Path
 
-from . import Rect, Show
+from . import Rect, Show, with_context
 
 EMERGE_S, GLIDE_S, FADE_S = 0.24, 0.22, 0.27  # cursor travel times (v4 spec)
 
@@ -155,7 +155,8 @@ class Overlay(Show):
         self._send({"t": "clear"})
 
     def meter(self, text: str, calls: int) -> None:
-        self._send({"t": "meter", "text": text, "calls": calls + self.calls_offset})
+        self._send({"t": "meter", "text": with_context(self.context, text),
+                    "calls": calls + self.calls_offset})
 
     def close(self) -> None:
         self._send({"t": "close"})

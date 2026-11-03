@@ -157,6 +157,11 @@ def _find(table: ActionTable, step: FlowStep):
     for row in table.rows:
         if row.role == step.role and row.name == step.name:
             return row
+    # same words, different case or spacing (a batch binds size "large" to radio "Large")
+    wanted = " ".join(step.name.split()).casefold()
+    for row in table.rows:
+        if row.role == step.role and wanted and " ".join(row.name.split()).casefold() == wanted:
+            return row
     # names drift a little between runs (tab titles, modified markers)
     for row in table.rows:
         if row.role == step.role and step.name[:12] and step.name[:12] in row.name:

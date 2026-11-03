@@ -20,7 +20,7 @@ Today's computer-use agents are slow because a large model thinks before and aft
 | **Act** | Accessibility patterns (`Invoke`, `SetValue`) on Windows, DevTools input in Chrome, keyboard input as the fallback. Shared flows (Save As, menus, downloads) are driver skills. Irreversible actions wait for a human (see Safety). |
 | **Verify** | Plain code checks the result; the model's "done" is never trusted. When the model says done but the task's checks disagree, the failed checks are fed back for up to two correction rounds. |
 | **Learn** | Every step is logged (JSONL). A successful run is saved as a flow. |
-| **Replay** | `quiff run <task> --replay` re-runs a saved flow with **no model calls**, re-finding each control by role and name, so it survives layout shifts. (Replay is per task today; per-step recall inside model runs is next.) |
+| **Replay** | `quiff run <task> --replay` re-runs a saved flow with **no model calls**, re-finding each control by role and name, so it survives layout shifts. `quiff batch` turns a flow into a template and replays it for every row of a CSV. (Per-step recall inside model runs is next.) |
 
 When the minimal decider is unsure, Muse Spark at high reasoning (the rescuer) takes the step. That happens on low confidence, two failed actions in a row, two failed decider calls, too many waits, or a detected loop. It's capped at 3 rescues per run, and a second loop stops the run honestly instead of burning time.
 
@@ -156,6 +156,29 @@ uv run quiff do "Write a shopping list with milk and eggs, save it as list.txt" 
 
 A successful run is saved as a flow, so the same command with `--replay` repeats it with zero AI calls. Desktop goals start in a fresh folder, `~/quiff-tasks/do-<id>/`.
 
+### Teach once, replay with new data: `quiff batch`
+
+The same chore for every row of a spreadsheet. Row 1 goes to the model: Muse Spark plans and decides each step, and the approval guard asks before anything irreversible. The flow it recorded becomes a template (every value that came from row 1 is replaced by its column), and rows 2..N replay it with their own values and **zero AI calls**, each row checked by code.
+
+```sh
+uv run python spikes/serve_forms.py      # a local order form at http://127.0.0.1:8765/order (keep it running)
+uv run quiff batch "Fill in the pizza order form: name {name}, phone {phone}, email {email}, size {size}, toppings cheese and onion, comments '{comments}'. Then submit it." \
+    --url http://127.0.0.1:8765/order --data tasks/batch/orders.csv \
+    --check-text '"custname": "{name}"' --check-text '"size": "{size}"' --interactive --show
+uv run python spikes/batch_race.py --rows 10   # the same 10 rows: screenshot agent vs quiff batch
+```
+
+At an approval, answer `a` to approve the same action for every row. A row whose replay fails before anything was approved falls back to the model; a row that was submitted but fails its checks is reported and never retried, so nothing is submitted twice. `--replay` runs every row from the saved template.
+
+**The batch race** (`spikes/batch_race.py --rows 10`, Nov 3, 2026): the same 10 orders, the same model, reasoning effort (minimal), token budget (8,192) and step cap (25) for both agents; one headless Chrome per agent; approvals granted automatically and counted; Quiff's teacher runs without the planning call, like the screenshot agent. Data: [`results/batch-race-2026-11-03-211217.json`](results/batch-race-2026-11-03-211217.json).
+
+| Agent | Rows passed | Total time | AI calls |
+|---|---|---|---|
+| Screenshot agent | 0/10 | 1,008 s, out of steps on every row | 252 |
+| **`quiff batch`** | **10/10** | **32.6 s** (row 1: 25.9 s; rows 2–10: about 0.7 s each) | **9**, all on row 1 |
+
+The screenshot agent ran out of its 25 steps on every row, as in the order-form race above, where its traces show it clicking 2–3 px beside the "Extra Cheese" checkbox. It never finished a row, so there is no fair speed-up to quote: the point is 10 of 10 done with 9 AI calls, against none done with 252.
+
 `--show` puts Quiff's overlay on screen:
 - **Status pill:** says what Quiff is doing. Its four states are working, unsure (the rescuer took over), approval needed, and your turn.
 - **Ghost cursor:** glides to each target and highlights it just before Quiff acts.
@@ -170,6 +193,7 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 **Working today:**
 - the browser and Windows loops with Muse Spark;
 - `quiff do`: your own goals, in Chrome or a desktop app, with optional checks;
+- `quiff batch`: teach once on row 1, replay rows 2..N of a CSV with zero AI calls (browser);
 - driver skills (Save As, menus, downloads) and per-app skill files;
 - the approval guard and ownership-based window safety;
 - rescue escalation with a budget, and correction rounds from failed checks;

@@ -1,0 +1,209 @@
+{
+  "provenance": {
+    "commit": "454141f",
+    "uncommitted_changes": true,
+    "measured_at": "2026-11-03 21:12:17 +0530"
+  },
+  "settings": {
+    "model": "muse-spark-1.3",
+    "effort_both": "minimal",
+    "max_tokens_both": 8192,
+    "rows": 10,
+    "data": "tasks/batch/orders.csv",
+    "approvals": "granted automatically and counted",
+    "browser": "one headless Chrome per mode for all rows",
+    "quiff_teacher": "no planning call (like the screenshot agent)"
+  },
+  "results": {
+    "slow": [
+      {
+        "row": 1,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 102.58,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 2,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 108.55,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 3,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 98.63,
+        "model_calls": 26,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 4,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 101.91,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 5,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 109.94,
+        "model_calls": 26,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 6,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 93.09,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 7,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 97.13,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 8,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 97.58,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 9,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 108.26,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      },
+      {
+        "row": 10,
+        "mode": "slow",
+        "success": false,
+        "elapsed_s": 90.55,
+        "model_calls": 25,
+        "stop_reason": "max steps"
+      }
+    ],
+    "quiff": [
+      {
+        "row": 1,
+        "mode": "quiff",
+        "row_mode": "model (taught the template)",
+        "success": true,
+        "elapsed_s": 25.91,
+        "model_calls": 9,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 2,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.74,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 3,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.67,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 4,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.72,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 5,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.68,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 6,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.81,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 7,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.79,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 8,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.72,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 9,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.73,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      },
+      {
+        "row": 10,
+        "mode": "quiff",
+        "row_mode": "replay",
+        "success": true,
+        "elapsed_s": 0.83,
+        "model_calls": 0,
+        "stop_reason": "done, checks pass"
+      }
+    ]
+  },
+  "summary": {
+    "slow": {
+      "rows": 10,
+      "passed": 0,
+      "total_s": 1008.22,
+      "median_row_s": 100.27,
+      "model_calls": 252
+    },
+    "quiff": {
+      "rows": 10,
+      "passed": 10,
+      "total_s": 32.6,
+      "median_row_s": 0.735,
+      "model_calls": 9
+    }
+  }
+}

@@ -101,6 +101,7 @@ class FastLoop:
         failed_acts = 0
         answer: str | None = None
         self.show.state("working", "Reading the screen")
+        self.show.clear_target()  # no box left over from a previous run (a batch's last row)
 
         if start_url:
             observe_start = time.perf_counter()

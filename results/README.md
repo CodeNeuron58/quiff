@@ -13,6 +13,12 @@ Measured results, each with the commit that produced it (`provenance` in every f
 
 What changed from the batches below: the screenshot agent ran at the model's default reasoning effort, Quiff at minimal. With both at minimal, the login gap shrinks from 1.8× to 1.07×.
 
+## The batch race (Nov 3, 2026)
+
+| File | Commit | What it is |
+|---|---|---|
+| `batch-race-2026-11-03-211217.json` | `454141f` + the `quiff batch` changes (uncommitted when measured) | `spikes/batch_race.py --rows 10`: the same 10 orders from `tasks/batch/orders.csv`, the same model, effort, token budget and step cap (25) for both agents, one headless Chrome per agent. Slow 0/10 rows (out of steps on every row), 1,008 s, 252 AI calls · `quiff batch` 10/10, 32.6 s, 9 AI calls (all on row 1; rows 2–10 replayed in about 0.7 s each) |
+
 ## The reasoning-effort probe (Nov 3, 2026)
 
 | File | Commit | What it is |

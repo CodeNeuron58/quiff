@@ -255,3 +255,11 @@ async def test_muse_decider_tags_its_decisions():
     table = ActionTable(title="t", rows=(row("button", "Login"),), url="http://x/")
     decision = await MuseDecider(client=Client()).decide("g", "g", table, [])
     assert (decision.brain, decision.ms) == ("Muse Spark (minimal)", 1432)
+
+
+def test_meter_context_goes_in_front():
+    from quiff.show import with_context
+
+    assert with_context("Row 5 of 10", "Replay") == "Row 5 of 10 · Replay"
+    assert with_context("", "Muse Spark (minimal) · 1.4 s") == "Muse Spark (minimal) · 1.4 s"
+    assert with_context("Row 1 of 3", "") == "Row 1 of 3"

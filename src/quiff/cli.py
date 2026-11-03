@@ -44,6 +44,24 @@ def main() -> None:
                     help="pass only if Quiff's answer matches")
     _add_run_flags(do)
 
+    batch = commands.add_parser(
+        "batch", help="teach once, replay with new data: one goal, every row of a CSV",
+        description="Row 1 goes to the model, which teaches a template; rows 2..N replay it "
+                    "with their own values and zero AI calls, each row checked by code. A row "
+                    "whose replay fails before anything was approved falls back to the model; "
+                    "a submitted row is never retried. --replay uses the saved template for "
+                    "every row.")
+    batch.add_argument("goal", help='goal with {column} placeholders, e.g. "Fill in the order '
+                                    'form: name {name}, size {size}. Then submit it."')
+    batch.add_argument("--url", required=True, help="start page (may use {column})")
+    batch.add_argument("--data", required=True, help="CSV file; its header row names the columns")
+    batch.add_argument("--check-url", action="append", default=[], metavar="REGEX",
+                       help="every row must end on a matching URL (repeatable)")
+    batch.add_argument("--check-text", action="append", default=[], metavar="TEXT",
+                       help="every row's final page must contain this; may use {column}")
+    batch.add_argument("--rows", type=int, default=0, help="only the first N rows")
+    _add_run_flags(batch)
+
     observe = commands.add_parser("observe", help="print the action table for a URL")
     observe.add_argument("url")
     observe.add_argument("--headed", action="store_true")
@@ -76,6 +94,10 @@ async def _dispatch(args: argparse.Namespace) -> None:
                   f"{table.read_ms} ms read")
         finally:
             await observer.stop()
+        return
+
+    if args.command == "batch":
+        await _run_batch(args)
         return
 
     if args.command in ("run", "do"):
@@ -256,6 +278,111 @@ def _decision_timeout(effort: str) -> float:
     """Seconds a decision call may take: 20 at minimal effort (MuseDecider's own
     default when it makes its client), 60 when the model is asked to think."""
     return 20.0 if effort == "minimal" else 60.0
+
+
+async def _run_batch(args: argparse.Namespace) -> None:
+    """`quiff batch`: teach on row 1, replay the rest, report every row."""
+    import json
+    import time
+    from pathlib import Path
+
+    from quiff.batch import Teacher, batch_id, load_rows, load_template, run_batch
+    from quiff.observe.browser import BrowserObserver
+    from quiff.recall import FlowRecorder
+
+    rows = load_rows(Path(args.data))
+    if args.rows:
+        rows = rows[: args.rows]
+    checks = ([{"type": "url", "pattern": p} for p in args.check_url]
+              + [{"type": "page_text", "contains": t} for t in args.check_text])
+    show = None
+    if args.show:
+        from quiff.show.overlay import Overlay, OverlayError
+
+        try:
+            show = Overlay(scale=args.show_scale)
+        except OverlayError as exc:
+            raise SystemExit(f"quiff: {exc}")
+        args.headed = True
+
+    template, teacher = None, None
+    if args.replay:
+        template = load_template(batch_id(args.goal, args.url))
+        print(f"template {len(template.steps)} steps · every row replays with zero AI calls")
+    else:
+        from quiff.models.meta import MuseDecider, display_name, make_client
+        from quiff.plan import plan
+
+        client = make_client(args.model)
+        quick = make_client(args.model, timeout=_decision_timeout(args.effort))
+        print(f"brain    {display_name(client.model)} ({args.effort}) teaches on row 1 "
+              f"+ rescue on high · {client.model}")
+
+        async def teacher(task):
+            planned = None
+            try:
+                planned = await plan(task.goal, client=client)
+            except Exception as exc:
+                print(f"plan     (unavailable: {exc})")
+            return Teacher(
+                decider=FlowRecorder(MuseDecider(client=quick, effort=args.effort),
+                                     task.id, task.goal),
+                rescuer=MuseDecider(client=client, effort="high", max_tokens=16384),
+                planned=planned, calls_before=1)
+
+    yes_to_all: set[str] = set()
+
+    async def approver(reason: str) -> bool:
+        if reason in yes_to_all:
+            print(f"approved {reason} (yes to all rows)")
+            return True
+        if not args.interactive:
+            return False
+        answer = await asyncio.to_thread(
+            input, f"APPROVAL NEEDED: {reason}. Approve? y = yes, a = yes for every row, n = no: ")
+        answer = answer.strip().lower()
+        if answer.startswith("a"):
+            yes_to_all.add(reason)
+            return True
+        return answer.startswith("y")
+
+    def on_row(result, total: int) -> None:
+        print(f"row {result.row:>3}/{total}  {'PASS' if result.success else 'FAIL'}  "
+              f"{result.mode:<28} {result.elapsed_s:>6.1f} s  {result.model_calls} AI calls"
+              + ("" if result.success else f"  · {result.stop_reason[:70]}"))
+
+    observer = BrowserObserver(headless=not args.headed)
+    result = None
+    try:
+        result = await run_batch(args.goal, args.url, rows, checks, observer=observer,
+                                 teacher=teacher, template=template, approver=approver,
+                                 show=show, max_steps=args.max_steps, on_row=on_row)
+    finally:
+        if show is not None:
+            if result is not None:
+                show.state("yourturn", f"Batch done · {result.passed}/{len(result.rows)} rows · "
+                                       f"{result.model_calls} AI calls · {result.elapsed_s:.1f} s")
+            else:
+                show.state("yourturn", "Batch stopped · you have control")
+            await asyncio.sleep(3.5)
+        await observer.stop()
+        if show is not None:
+            show.close()
+    summary = result.summary()
+    print(f"batch    {summary['passed']}/{summary['rows']} rows passed · "
+          f"{summary['replayed_with_zero_ai_calls']} replayed with zero AI calls · "
+          f"{summary['model_calls']} AI calls in total · {summary['elapsed_s']} s")
+    if result.template_columns:
+        print(f"template {result.template_file} · columns {', '.join(result.template_columns)}")
+    out = Path("runs") / f"batch-{time.strftime('%Y-%m-%d-%H%M%S')}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({"summary": summary, "goal": args.goal, "url": args.url,
+                               "data": str(args.data),
+                               "rows": [r.__dict__ for r in result.rows]}, indent=2),
+                   encoding="utf-8")
+    print(f"saved    {out}")
+    if result.passed < len(result.rows):
+        raise SystemExit(1)
 
 
 def _ending_line(run, extra_calls: int = 0) -> str:
