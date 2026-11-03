@@ -125,8 +125,12 @@ class TaskRun:
     @property
     def success(self) -> bool:
         # The checks are the referee: the task passed iff its automatic
-        # checks pass. The loop's own "done" is information, not the verdict.
-        return bool(self.checks) and all(result.ok for result in self.checks)
+        # checks pass. The loop's own "done" is information, not the verdict,
+        # except for a `quiff do` goal given without checks, where it is all
+        # there is (and the CLI says so).
+        if not self.checks:
+            return self.loop.success
+        return all(result.ok for result in self.checks)
 
 
 def desktop_argv(task: Task) -> list[str]:
@@ -212,7 +216,9 @@ async def run_task(
         sandbox=sandbox,
         started_ts=started_ts,
     )
-    success = bool(all(item.ok for item in checks))
+    # no checks given (quiff do): only a run the loop finished counts, so a
+    # flow is never saved from a run that stopped halfway
+    success = bool(all(item.ok for item in checks)) and (bool(checks) or result.success)
     if isinstance(decider, FlowRecorder):
         saved = decider.save_if_ran(success)
         if saved:

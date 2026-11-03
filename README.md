@@ -30,7 +30,7 @@ When the minimal decider is unsure, Muse Spark at high reasoning (the rescuer) t
   - **Go/no-go benchmark** (`spikes/model_probe.py`, one fixed row-picking prompt, 20 tries per effort, an 8,192-token budget; Nov 3): 100% schema-valid and 100% correct row at minimal, low and high effort; median decision 4.5 s at minimal. On Nov 1 the same probe measured 1.5 s at minimal: model latency varies a lot with load.
   - **Real task runs** (bigger tables, Nov 1–2): about 2.4 s median per decision.
 - **Muse Spark at high reasoning:** plans the subgoals and rescues the loop (see above).
-- **Muse Spark Open** (`meta-models/muse-spark-open-1026` on Baseten): wired into the same decision interface (`muse_spark_open()`), **not yet run**, because Baseten credits didn't arrive during the hackathon.
+- **Muse Spark Open** (open weights, on a partner host: Modal, Baseten or Fireworks, set with `MUSE_OPEN_*` in `.env`): wired into the same decision interface. `--model open` runs the plan, the decisions and the rescues on it, in `quiff run`, `quiff do` and the race. **Not yet run.**
 
 What the benchmark taught us: for a narrow, well-structured pick, more reasoning buys nothing and costs time. Every effort chose the right row in 20 of 20 tries; low effort took 1.3× and high effort 1.7× as long as minimal, writing 1.8× and 2.4× as many tokens. The decider runs at minimal, and the verification layer catches the rest.
 
@@ -133,12 +133,28 @@ uv run quiff run b05 --show --show-scale 1.5   # bigger overlay, for screen reco
 uv run quiff run b04 --interactive --headed   # the approval guard asks before "Submit order"
 uv run quiff run d01                   # records a replayable flow (close Notepad first)
 uv run quiff run d01 --replay          # then replay it: no model calls
+uv run quiff run b05 --model open      # the same run on Muse Spark Open (MUSE_OPEN_* in .env)
 uv run python spikes/race_local.py --runs 5    # the race: 2 local tasks, both agents on the same settings
 uv run python spikes/regression.py --runs 3    # re-test the demo tasks on your machine
 uv run python spikes/model_probe.py    # the go/no-go benchmark
 ```
 
 `quiff run` drives a real browser window or app; every step is logged to `runs/` as JSONL.
+
+### Your own task: `quiff do`
+
+Give Quiff any goal in plain words, with where to start. Checks are optional; without them the model's own "done" is the only evidence, and the result says so.
+
+```sh
+uv run quiff do "Log in with username tomsmith and password SuperSecretPassword!" \
+    --url https://the-internet.herokuapp.com/login --check-url "secure$" --show
+uv run quiff do "Log in with username tomsmith and password SuperSecretPassword!" \
+    --url https://the-internet.herokuapp.com/login --replay        # again, zero AI calls
+uv run quiff do "Write a shopping list with milk and eggs, save it as list.txt" \
+    --app notepad --check-file list.txt                            # desktop: a fresh task folder
+```
+
+A successful run is saved as a flow, so the same command with `--replay` repeats it with zero AI calls. Desktop goals start in a fresh folder, `~/quiff-tasks/do-<id>/`.
 
 `--show` puts Quiff's overlay on screen:
 - **Status pill:** says what Quiff is doing. Its four states are working, unsure (the rescuer took over), approval needed, and your turn.
@@ -153,6 +169,7 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 
 **Working today:**
 - the browser and Windows loops with Muse Spark;
+- `quiff do`: your own goals, in Chrome or a desktop app, with optional checks;
 - driver skills (Save As, menus, downloads) and per-app skill files;
 - the approval guard and ownership-based window safety;
 - rescue escalation with a budget, and correction rounds from failed checks;

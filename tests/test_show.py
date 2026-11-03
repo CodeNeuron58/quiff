@@ -228,12 +228,16 @@ def test_ending_line_reports_ai_calls_and_time():
 
     from quiff.cli import _ending_line
 
-    run = SimpleNamespace(success=True, loop=SimpleNamespace(model_calls=3, elapsed_s=15.84,
-                                                             stop_reason="done"))
+    checked = [SimpleNamespace(ok=True)]
+    run = SimpleNamespace(success=True, checks=checked,
+                          loop=SimpleNamespace(model_calls=3, elapsed_s=15.84, stop_reason="done"))
     assert _ending_line(run, extra_calls=1) == "Done · all checks pass · 4 AI calls · 15.8 s"
-    replay = SimpleNamespace(success=True, loop=SimpleNamespace(model_calls=0, elapsed_s=2.2,
-                                                                stop_reason="done"))
+    replay = SimpleNamespace(success=True, checks=checked,
+                             loop=SimpleNamespace(model_calls=0, elapsed_s=2.2, stop_reason="done"))
     assert _ending_line(replay) == "Done · all checks pass · 0 AI calls · 2.2 s"
+    unchecked = SimpleNamespace(success=True, checks=[],
+                                loop=SimpleNamespace(model_calls=1, elapsed_s=3.0, stop_reason="done"))
+    assert _ending_line(unchecked) == "Done · no checks given · 1 AI call · 3.0 s"
 
 
 async def test_muse_decider_tags_its_decisions():
