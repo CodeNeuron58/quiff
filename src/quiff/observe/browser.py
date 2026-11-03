@@ -172,6 +172,20 @@ def _window_rect(hwnd: int) -> tuple[int, int, int, int]:
     return rect.left, rect.top, rect.right, rect.bottom
 
 
+def _write_profile_prefs(user_data_dir: Path) -> None:
+    """Quiet the throwaway profile's password manager: after a login it would
+    offer to save the password or pop a 'Change your password' breach warning
+    over the page, which blocks the page and fills the screen."""
+    prefs = {
+        "credentials_enable_service": False,
+        "profile": {"password_manager_enabled": False,
+                    "password_manager_leak_detection": False},
+    }
+    default = user_data_dir / "Default"
+    default.mkdir(parents=True, exist_ok=True)
+    (default / "Preferences").write_text(json.dumps(prefs), encoding="utf-8")
+
+
 def _click_through(hwnd: int) -> bool:
     """Overlay windows (Quiff's own, too) ignore the mouse; Chrome's never do."""
     import ctypes
@@ -567,6 +581,7 @@ class BrowserObserver:
         if self._process:
             return
         self._user_data_dir = tempfile.mkdtemp(prefix="quiff-chrome-")
+        _write_profile_prefs(Path(self._user_data_dir))
         self._windows_before = set(_top_level_windows())  # our window is whatever appears after
         self._chrome_hwnd = None
         self._process = subprocess.Popen(
