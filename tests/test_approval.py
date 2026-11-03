@@ -154,3 +154,29 @@ def test_save_as_without_a_known_sandbox_always_asks(tmp_path):
 def test_download_always_asks():
     decision = Decision(action="download", values=("http://x/f.txt", "C:/f.txt"))
     assert needs_approval(decision, browser_table())
+
+
+# ------------------------------------------------------------- reasons people can read
+
+@pytest.mark.parametrize("name, expected", [
+    ("Submit order", 'Clicking "Submit order" submits it for good'),
+    ("Delete account", 'Clicking "Delete account" deletes it for good'),
+    ("Pay now", 'Clicking "Pay now" spends money'),
+    ("Send", 'Clicking "Send" sends it for good'),
+])
+def test_reasons_say_what_would_happen(name, expected):
+    # the reason is what a person reads before answering y/n (terminal and
+    # overlay pill); it used to be a bare label like: button "Submit order"
+    table = browser_table(row(1, "button", name))
+    assert needs_approval(Decision(action="click", row=1), table) == expected
+
+
+def test_key_reasons_name_keys_the_way_people_write_them():
+    assert needs_approval(press("ctrl+enter"), browser_table()) == \
+        "Pressing Ctrl+Enter can send a message"
+    focus = Focus(role="textbox", name="Email", form_submits=("Submit",))
+    assert needs_approval(press("Enter"), browser_table(), focus=focus) == \
+        'Pressing Enter triggers "Submit", which submits it for good'
+    on_file = Focus(role="listitem", name="report.docx")
+    assert needs_approval(press("Delete"), desktop_table(), focus=on_file) == \
+        'Pressing Delete deletes "report.docx"'

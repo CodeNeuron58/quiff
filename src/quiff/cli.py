@@ -119,7 +119,7 @@ async def _dispatch(args: argparse.Namespace) -> None:
             import asyncio as _aio
 
             async def approver(reason: str) -> bool:
-                prompt = "APPROVAL NEEDED: " + reason + " — Approve? y/n: "
+                prompt = "APPROVAL NEEDED: " + reason + ". Approve? y/n: "
                 answer = await _aio.to_thread(input, prompt)
                 return answer.strip().lower().startswith("y")
 

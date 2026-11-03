@@ -95,6 +95,38 @@ def _risky_name(name: str) -> bool:
     return bool(RISKY_PATTERN.search(name or ""))
 
 
+# What the risky word means for the user, said plainly. The reasons below are
+# what a person reads before answering y/n (in the terminal and on the pill).
+_CONSEQUENCES = (
+    (("delete", "remove", "erase", "uninstall"), "deletes it for good"),
+    (("pay", "purchase", "buy", "place order", "checkout", "check out"), "spends money"),
+    (("send", "transfer"), "sends it for good"),
+    (("submit", "post", "publish", "approve", "confirm"), "submits it for good"),
+)
+_COMBO_CONSEQUENCES = {
+    "ctrl+enter": "can send a message",
+    "alt+s": "can send a message",
+    "ctrl+d": "can delete or discard",
+    "shift+delete": "deletes for good, skipping the Recycle Bin",
+    "ctrl+shift+delete": "can clear browsing data",
+}
+
+
+def _consequence(name: str) -> str:
+    match = RISKY_PATTERN.search(name or "")
+    word = " ".join(match.group(1).lower().split()) if match else ""
+    for words, consequence in _CONSEQUENCES:
+        if word in words:
+            return consequence
+    return "can't be undone"
+
+
+def _key_name(combo: str) -> str:
+    """'ctrl+enter' -> 'Ctrl+Enter', the way people write keys."""
+    return "+".join(part.capitalize() if len(part) > 1 else part.upper()
+                    for part in combo.split("+"))
+
+
 def _commits(role: str) -> bool:
     """True for controls whose activation can commit something (buttons, links, menu items)."""
     role = (role or "").lower()
@@ -110,7 +142,8 @@ def needs_approval(decision: Decision, table: ActionTable, focus: Focus | None =
     into without asking (the sandbox)."""
     if decision.action == "download":
         # the model chose where to write on disk — always a human decision
-        return "download to " + (" ".join(decision.values) or "an unspecified path")
+        return ("Downloading writes a file to "
+                + (" ".join(decision.values) or "an unspecified place") + " on this computer")
     if decision.action == "save_as":
         return _save_as_risk(" ".join(decision.values), write_root)
     if decision.action == "press":
@@ -123,10 +156,10 @@ def needs_approval(decision: Decision, table: ActionTable, focus: Focus | None =
     if decision.action == "select":
         option = " ".join(decision.values)
         if _risky_name(option):
-            return f"choose \"{option}\" in {row.role} \"{row.name}\""
+            return f"Choosing \"{option}\" in \"{row.name}\" {_consequence(option)}"
         return None
     if _commits(row.role) and _risky_name(row.name):
-        return f"{row.role} \"{row.name}\""
+        return f"Clicking \"{row.name}\" {_consequence(row.name)}"
     return None
 
 
@@ -136,41 +169,43 @@ def _press_risk(decision: Decision, table: ActionTable, focus: Focus | None) -> 
         keys = ("enter",)  # an empty press is pressed as Enter, so judge it as Enter
     combo = "+".join(mods + keys)
     if combo in RISKY_COMBOS:
-        return f"keyboard shortcut {combo}"
+        return f"Pressing {_key_name(combo)} {_COMBO_CONSEQUENCES.get(combo, 'commits an action')}"
     if mods or len(keys) != 1:
         return None
     key = keys[0]
     if key == "delete" and table.url is None:  # desktop: Delete removes files and items
         if focus is not None and focus.role.lower() in ENTRY_ROLES:
             return None  # deleting characters inside a text box
-        return "Delete key" + (f" on {focus.role} \"{focus.name}\"" if focus else "")
+        return "Pressing Delete deletes " + (f"\"{focus.name}\"" if focus and focus.name
+                                             else "the selected item")
     if key not in ("enter", "space"):
         return None
     if focus is None:
         # can't tell what the key lands on: ask if anything risky is on screen
         risky = next((r for r in table.rows if _commits(r.role) and _risky_name(r.name)), None)
-        return f"{key} while {risky.role} \"{risky.name}\" is on screen" if risky else None
+        return (f"Pressing {_key_name(key)} could trigger \"{risky.name}\", which "
+                f"{_consequence(risky.name)}") if risky else None
     if _commits(focus.role) and _risky_name(focus.name):
-        return f"{key} on {focus.role} \"{focus.name}\""
+        return f"Pressing {_key_name(key)} on \"{focus.name}\" {_consequence(focus.name)}"
     if key == "enter" and focus.role.lower() in ENTRY_ROLES:
         submit = next((name for name in focus.form_submits if _risky_name(name)), None)
         if submit:
-            return f"Enter would submit the form (\"{submit}\")"
+            return f"Pressing Enter triggers \"{submit}\", which {_consequence(submit)}"
     return None
 
 
 def _save_as_risk(path_text: str, write_root: Path | None) -> str | None:
     if not path_text.strip():
-        return "save to an unspecified path"
+        return "Saving to an unspecified place"
     target = Path(path_text).expanduser()
     if target.exists():
-        return f"overwrite {target}"
+        return f"Saving would overwrite {target}"
     if write_root is None:
-        return f"save to {target}"
+        return f"Saving writes {target}"
     try:
         target.resolve().relative_to(Path(write_root).resolve())
     except ValueError:
-        return f"save to {target} (outside the task folder)"
+        return f"Saving writes {target}, outside the task folder"
     return None
 
 
