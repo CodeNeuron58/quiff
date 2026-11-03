@@ -2,9 +2,12 @@
 
 import pytest
 
-import quiff.tasks as tasks_mod
-from quiff.observe import desktop as desktop_mod
-from quiff.tasks import Task, _preflight_desktop_app
+# the desktop side drives Windows UI Automation (comtypes): Windows only
+pytest.importorskip("comtypes", reason="desktop tests need Windows UI Automation")
+
+import quiff.tasks as tasks_mod  # noqa: E402
+from quiff.observe import desktop as desktop_mod  # noqa: E402
+from quiff.tasks import Task, _preflight_desktop_app  # noqa: E402
 
 
 def make_task():

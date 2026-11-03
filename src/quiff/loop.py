@@ -81,12 +81,12 @@ class FastLoop:
         self.rescuer = rescuer
         self.approver = approver
         self.verify_after_done = verify_after_done
+        # approver: async (reason) -> bool; the only way past the approval guard.
+        # verify_after_done: async () -> (passed, feedback); lets the referee
+        # correct the model when it declares done but the checks disagree.
+        # write_root: the folder the task may write NEW files into without
+        # asking (the sandbox); saving anywhere else, or overwriting, needs approval.
         self.write_root = write_root
-        """The folder the task may write NEW files into without asking (the
-        sandbox); saving anywhere else, or overwriting, needs approval."""
-        """async callable -> (passed, feedback); lets the referee correct the
-        model once when it declares done but the checks disagree."""
-        """async callable (reason) -> bool; the only way past the approval guard."""
 
     async def run(
         self,
@@ -121,7 +121,7 @@ class FastLoop:
         waits = 0
         force_rescue = False
         rescue_why = ""
-        corrected = False
+        corrected = 0  # correction rounds used so far
         last_result: str | None = None
         performed: dict[tuple[str, str], int] = {}
         self._model_calls = 0
@@ -359,6 +359,8 @@ class FastLoop:
                     "values": _redacted(decision, table),
                     "confidence": decision.confidence,
                     "note": decision.note,
+                    "brain": decision.brain,  # what decided: model, rescuer, replay
+                    "ms": decision.ms,
                 },
                 "act": None if result is None else
                        {"ok": result.ok, "detail": result.detail, "ms": result.ms},

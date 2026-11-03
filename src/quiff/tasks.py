@@ -193,8 +193,6 @@ async def run_task(
     if task.app == "chrome":
         result = await loop.run(task.goal, start_url=_start_url(task), subgoal=subgoal)
     else:
-        from quiff.observe.desktop import DesktopObserver
-
         await observer.open(desktop_argv(task), cwd=str(sandbox))
         # A human doing the task knows their own folder; tell the agent too.
         desktop_goal = f"{task.goal} (The task folder is: {sandbox})"

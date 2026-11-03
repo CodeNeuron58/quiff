@@ -19,6 +19,15 @@ What changed from the batches below: the screenshot agent ran at the model's def
 |---|---|---|
 | `batch-race-2026-11-03-211217.json` | `454141f` + the `quiff batch` changes (uncommitted when measured) | `spikes/batch_race.py --rows 10`: the same 10 orders from `tasks/batch/orders.csv`, the same model, effort, token budget and step cap (25) for both agents, one headless Chrome per agent. Slow 0/10 rows (out of steps on every row), 1,008 s, 252 AI calls · `quiff batch` 10/10, 32.6 s, 9 AI calls (all on row 1; rows 2–10 replayed in about 0.7 s each) |
 
+## Who did the work (Nov 3, 2026)
+
+`spikes/cascade_stats.py` over the step logs (every step records what decided it).
+
+| File | What it is |
+|---|---|
+| `cascade-2026-11-03-final-code.json` | The runs on the final code, Nov 3 evening (the race, the batch race, the batch and replay runs, the live checks): 526 steps. Replay 70%, Muse Spark at minimal 29%, correction rounds 2 steps, no rescues |
+| `cascade-2026-11-03-all-logs.json` | Every step logged since Oct 31, development included: 2,350 steps. Muse Spark 54%, replay 27%, the rescuer 13%, scripts 4%, unknown 1% (old logs without a model id) |
+
 ## The reasoning-effort probe (Nov 3, 2026)
 
 | File | Commit | What it is |

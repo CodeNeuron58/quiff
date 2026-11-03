@@ -1,0 +1,32 @@
+{
+  "goal": "Log in to the test site with username tomsmith and password SuperSecretPassword!",
+  "task_id": "b05-test-login",
+  "steps": [
+    {
+      "action": "type",
+      "role": "textbox",
+      "name": "Username",
+      "values": [
+        "tomsmith"
+      ],
+      "note": ""
+    },
+    {
+      "action": "type",
+      "role": "textbox",
+      "name": "Password",
+      "values": [
+        "SuperSecretPassword!"
+      ],
+      "note": ""
+    },
+    {
+      "action": "click",
+      "role": "button",
+      "name": " Login",
+      "values": [],
+      "note": ""
+    }
+  ],
+  "recorded_at": "2026-11-03 20:37:55"
+}

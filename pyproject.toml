@@ -1,7 +1,7 @@
 [project]
 name = "quiff"
 version = "0.1.0"
-description = "Fast computer use for Windows desktop apps and Chrome: reads the screen as structured data, lets a small decision model pick each action, and calls a frontier model only when unsure."
+description = "Fast computer use for Windows desktop apps and Chrome: reads the screen as structured data, lets Meta's Muse Spark pick each action, checks every result in code, and replays what it learned with zero model calls."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]

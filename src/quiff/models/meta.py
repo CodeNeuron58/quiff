@@ -3,7 +3,7 @@
 Both speak OpenAI-style Chat Completions with JSON-schema structured output,
 so one class covers them; only the base URL, key and model id differ.
 
-Facts this builds on (verified from the official docs, see context/08):
+Facts this builds on (checked against the providers' official API docs):
 - Meta Model API: POST https://api.meta.ai/v1/chat/completions, Bearer key
 - Baseten:        POST https://inference.baseten.co/v1/chat/completions, Bearer key
 - structured output: response_format {"type": "json_schema", ...}; the JSON

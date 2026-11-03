@@ -52,10 +52,11 @@ class ActionTable:
     url: str | None = None
     read_ms: int | None = None
     page_key: str | None = None
-    omitted: int = 0
-    """Actionable controls filtered out (viewport bounds, cap) — honesty flag."""
     """Fingerprint of the page this table was read from; the acting stage
     refuses to act when the live key no longer matches (jev-ra fresh())."""
+
+    omitted: int = 0
+    """Actionable controls filtered out (viewport bounds, cap) — honesty flag."""
 
     def by_index(self, index: int) -> ActionRow | None:
         for row in self.rows:

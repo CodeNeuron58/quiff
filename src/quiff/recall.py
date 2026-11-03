@@ -21,6 +21,8 @@ from .decide import Decision, Decider
 from .observe.table import ActionTable
 
 FLOWS_DIR = Path("runs") / "flows"
+# Flows that ship with the repo, so a fresh clone can try replay without an API key.
+EXAMPLE_FLOWS_DIR = Path(__file__).resolve().parent.parent.parent / "examples" / "flows"
 
 
 @dataclass
@@ -52,7 +54,10 @@ def save_flow(flow: Flow, directory: Path = FLOWS_DIR) -> Path:
 
 
 def load_flow(task_id: str, directory: Path = FLOWS_DIR) -> Flow:
+    """Your own recorded flow first; otherwise one that ships in examples/flows/."""
     path = directory / f"{task_id}.json"
+    if not path.exists() and directory == FLOWS_DIR:
+        path = EXAMPLE_FLOWS_DIR / f"{task_id}.json"
     if not path.exists():
         raise FileNotFoundError(f"no recorded flow for {task_id!r}; run it once first")
     data = json.loads(path.read_text(encoding="utf-8"))

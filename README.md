@@ -1,5 +1,7 @@
 # Quiff
 
+[![CI](https://github.com/CodeNeuron58/quiff/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeNeuron58/quiff/actions/workflows/ci.yml)
+
 *Fast hands for your AI.*
 
 Quiff is an engine that drives Windows desktop apps and Chrome. It reads the screen as structured data (the accessibility tree on Windows, the DevTools protocol in Chrome) instead of screenshots. Meta's Muse Spark picks each action from a numbered table of controls, plain code checks every result, irreversible actions wait for a human, and a task Quiff has completed once can be replayed with no model call at all.
@@ -41,6 +43,18 @@ What the benchmark taught us: for a narrow, well-structured pick, more reasoning
 | high | 7.6 s | 100% | 100% | 0% | 673.5 |
 
 [Chart](results/effort-study.svg) · [data](results/model-probe-2026-11-03-200851.json). An earlier README said only 55% of low-effort replies were valid JSON. That probe capped replies at 512 tokens, and low effort's median reply is about 512 tokens, so about half were cut off mid-answer. With room to finish, low effort is 100% valid.
+
+### Who did the work
+
+Every step Quiff takes is logged with what decided it. `spikes/cascade_stats.py` counts them. Over the runs on the final code (Nov 3, evening: the race, the batch race, the batch and replay runs, and the live checks; 526 steps):
+
+| Tier | Steps | Share | Median decision |
+|---|---|---|---|
+| Replay (no model call) | 370 | 70% | — |
+| Muse Spark, minimal reasoning | 154 | 29% | 2.7 s |
+| Correction round (no model call) | 2 | 0% | — |
+
+The rescuer wasn't needed in these runs. Across every step logged since Oct 31 (2,350, development included), Muse Spark decided 54%, replay 27%, the rescuer 13% and scripts 4%. The planning call isn't a step, so it isn't counted here. Data: [final code](results/cascade-2026-11-03-final-code.json), [all logs](results/cascade-2026-11-03-all-logs.json).
 
 ## Safety by construction
 
@@ -126,6 +140,7 @@ Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), Windows, and Chrome (pl
 uv sync
 echo META_API_KEY=your-key > .env      # from ai.developer.meta.com
 uv run quiff tasks                     # list the 20-task suite
+uv run quiff run b05 --replay --headed # no API key yet? replays a flow from examples/flows/: zero model calls
 uv run quiff run b05 --headed          # the model logs into a public test site
 cd overlay && npm install && cd ..     # once, for --show
 uv run quiff run b05 --show            # watch it: status pill and ghost cursor
@@ -137,6 +152,7 @@ uv run quiff run b05 --model open      # the same run on Muse Spark Open (MUSE_O
 uv run python spikes/race_local.py --runs 5    # the race: 2 local tasks, both agents on the same settings
 uv run python spikes/regression.py --runs 3    # re-test the demo tasks on your machine
 uv run python spikes/model_probe.py    # the go/no-go benchmark
+uv run python spikes/cascade_stats.py  # how many steps replay, Muse Spark and the rescuer each took
 ```
 
 `quiff run` drives a real browser window or app; every step is logged to `runs/` as JSONL.
@@ -212,6 +228,14 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 ## Built during the hackathon
 
 Everything substantive after the `pre-hackathon` tag was built during the Meta Global AI Developer Hackathon (Oct 27 – Nov 4, 2026): the entire engine, the model layer, the safety layer, the task suite, the probe, and the race and regression harnesses with their results in `results/`. Compare: [pre-hackathon...main](https://github.com/CodeNeuron58/quiff/compare/pre-hackathon...main). Before the tag there was only the package skeleton, the README, and the license.
+
+## Credits
+
+Quiff's code is its own, written during the hackathon, but several ideas come from open-source computer-use work, and the comments say where:
+
+- [Cua](https://github.com/trycua/cua): Chrome launch flags that keep background tabs from being suspended, driver skills and per-app skill files, and counting progress in the runner instead of asking the model (Cua issue #4313).
+- [Browser Use](https://github.com/browser-use/browser-use) and [jev-ra](https://github.com/brnyxx/jev-ra) (an MIT-licensed tool that lets coding agents drive Chrome over the DevTools protocol): sending a mouse move before each click, reading input back after typing, and fresh-page checks before acting.
+- The OSWorld-Human study (MLSys 2026): the measurement that large-model calls take 90–97% of computer-use agents' time.
 
 ## License
 

@@ -157,6 +157,7 @@ class _OurWindow:
 
 
 def test_desktop_typing_refuses_when_our_window_is_not_in_front(monkeypatch):
+    pytest.importorskip("comtypes", reason="desktop tests need Windows UI Automation")
     from quiff import act as act_mod
     from quiff.observe import desktop as desktop_mod
 
