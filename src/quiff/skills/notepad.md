@@ -13,10 +13,12 @@ How Notepad (Windows 11 store app) exposes itself and how to drive it.
 
 - **Write text**: type into the document row. SetValue commits instantly.
 - **Save an existing file**: press Ctrl+S — it saves in place silently.
-- **Save an unsaved document**: press Ctrl+S → a Save-As dialog opens →
-  type the FULL destination path (folder + name) into the `File name` edit
-  box → press Enter. Typing only a file name saves to whatever folder the
-  dialog defaults to.
+- **Save to a path (a new file, or a new name)**: use the `save_as` action
+  with the FULL destination path (folder + name). It is one step: the engine
+  drives the Save-As dialog itself and checks the file landed.
+- Only if a Save-As dialog is already open: type the FULL path into its
+  `File name` box, then press Enter. Typing only a file name saves to
+  whatever folder the dialog defaults to.
 
 ## Quirks
 

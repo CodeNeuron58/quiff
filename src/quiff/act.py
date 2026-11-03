@@ -614,7 +614,8 @@ def _act_desktop(observer, table: ActionTable, decision: Decision) -> ActResult:
 
     if decision.action == "type":
         text = " ".join(decision.values)
-        value = _pattern(element, "Value")
+        keys_only = _ignores_set_value(row)
+        value = None if keys_only else _pattern(element, "Value")
         if value is not None:
             for _ in range(2):
                 try:
@@ -631,9 +632,18 @@ def _act_desktop(observer, table: ActionTable, decision: Decision) -> ActResult:
         _require_foreground(observer)
         _select_all_desktop()
         _type_text(observer, text)
-        return ActResult(ok=True, detail=f"typed into [{decision.row}] {row.role} \"{row.name}\"")
+        how = " with keystrokes (this box ignores SetValue)" if keys_only else ""
+        return ActResult(ok=True,
+                         detail=f"typed into [{decision.row}] {row.role} \"{row.name}\"{how}")
 
     return ActResult(ok=False, detail=f"unknown action {decision.action!r}")
+
+
+def _ignores_set_value(row: ActionRow) -> bool:
+    """The Save/Open dialog's "File name" box accepts SetValue, even reads it
+    back, but never commits it: the dialog then saves under its own suggested
+    name. Only real keystrokes register there (the same reason _save_as types)."""
+    return row.role.lower() in ("edit", "combobox", "combo box") and "file name" in row.name.lower()
 
 
 def _read_value(pattern) -> str | None:
@@ -821,8 +831,7 @@ def _save_as(observer, file_path: str) -> ActResult:
         from .observe.table import ActionTable
 
         dialog_table = ActionTable(title="Save as", rows=tuple(table_rows))
-        edit = next((r for r in table_rows if r.role == "edit"
-                     and "file name" in r.name.lower()), None)
+        edit = next((r for r in table_rows if r.role == "edit" and _ignores_set_value(r)), None)
         if edit is None:
             return ActResult(ok=False, detail="no File name box in the Save dialog")
         # The common-dialog file box accepts SetValue (and even reads it back)

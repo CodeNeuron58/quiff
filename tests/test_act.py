@@ -171,6 +171,68 @@ def test_desktop_typing_refuses_when_our_window_is_not_in_front(monkeypatch):
     assert sent == []  # not one character reached another window
 
 
+class _FakeValue:
+    """A Value pattern that, like the Save dialog's file box, accepts anything."""
+
+    def __init__(self):
+        self.CurrentValue = ""
+        self.set_calls = []
+
+    def SetValue(self, text):
+        self.set_calls.append(text)
+        self.CurrentValue = text
+
+
+class _FakeElement:
+    def __init__(self):
+        self.focused = False
+
+    def SetFocus(self):
+        self.focused = True
+
+
+class _DesktopWindow:
+    def __init__(self, element):
+        self.element = element
+
+    def find_row_element(self, target):
+        return self.element
+
+    def current_hwnd(self):
+        return 1
+
+
+def _type_on_desktop(monkeypatch, role, name, text):
+    from quiff import act as act_mod
+
+    value, element, typed = _FakeValue(), _FakeElement(), []
+    monkeypatch.setattr(act_mod, "_pattern", lambda el, kind: value if kind == "Value" else None)
+    monkeypatch.setattr(act_mod, "_require_foreground", lambda observer: None)
+    monkeypatch.setattr(act_mod, "_select_all_desktop", lambda: typed.append("<ctrl+a>"))
+    monkeypatch.setattr(act_mod, "_type_text", lambda observer, t: typed.append(t))
+    monkeypatch.setattr(act_mod.time, "sleep", lambda s: None)
+    table = ActionTable(title="Save as", rows=(
+        ActionRow(index=1, role=role, name=name, actions=("type",), enabled=True, target=1),))
+    result = act_mod._act_desktop(_DesktopWindow(element), table,
+                                  Decision(action="type", row=1, values=(text,)))
+    return result, value, typed
+
+
+def test_save_dialog_file_name_box_gets_real_keystrokes(monkeypatch):
+    # found live: SetValue "worked" (and read back) but the dialog saved under
+    # its own name; only keystrokes register in the common file dialog's box
+    path = r"C:\work\hello.txt"
+    result, value, typed = _type_on_desktop(monkeypatch, "edit", "File name:", path)
+    assert result.ok and "keystrokes" in result.detail
+    assert value.set_calls == []
+    assert typed == ["<ctrl+a>", path]
+
+
+def test_ordinary_desktop_boxes_still_use_set_value(monkeypatch):
+    result, value, typed = _type_on_desktop(monkeypatch, "edit", "Search", "invoices")
+    assert result.ok and value.set_calls == ["invoices"] and typed == []
+
+
 def test_browser_observer_picks_its_own_port_by_default():
     from quiff.observe.browser import BrowserObserver
 
