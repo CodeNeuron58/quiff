@@ -17,6 +17,7 @@ import statistics
 import time
 from pathlib import Path
 
+from quiff.act import _press_key, _select_all, combo_label
 from quiff.checks import run_checks
 from quiff.decide import Decision
 from quiff.loop import FastLoop
@@ -71,14 +72,12 @@ async def slow_act(observer, action: str, x: int, y: int, text: str) -> None:
         ):
             await cdp.call("Input.dispatchMouseEvent", **params)
     if action == "type" and text:
+        # same typing as Quiff's: replace the field's contents, don't append to them
+        await _select_all(cdp)
         await cdp.call("Input.insertText", text=text)
     if action == "press":
-        vk = 13 if "enter" in text.lower() else 0
-        if vk:
-            await cdp.call("Input.dispatchKeyEvent", type="rawKeyDown", key="Enter",
-                           windowsVirtualKeyCode=13, code="Enter", text="\r")
-            await cdp.call("Input.dispatchKeyEvent", type="keyUp", key="Enter",
-                           windowsVirtualKeyCode=13, code="Enter")
+        # same key handling as Quiff's: any combination, not just Enter
+        await _press_key(cdp, combo_label(text))
 
 
 def _slow_decide(client, body: dict) -> tuple[dict | None, str | None]:
@@ -106,6 +105,8 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
     api_errors = 0
     said_done = False
     stop_reason = "max steps"
+    trace: list[dict] = []  # what the agent did at each step, so failures can be diagnosed
+    shot_size = None
 
     await observer.open(task.start["url"])
     await observer.wait_settled()
@@ -113,30 +114,39 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
         shot = await observer.connection().call("Page.captureScreenshot", format="png")
         w, h = (int(v) for v in observer.window_size.split(","))
         view = {"width": w, "height": h}
+        shot_size = _png_size(shot["data"]) or [view["width"], view["height"]]
         data_uri = "data:image/png;base64," + shot["data"]
-        # the same generous budget as Quiff's rescuer: at 1024 the model's
-        # reasoning could use up the budget and return an empty answer, which
-        # handicapped the screenshot agent (an unfair race)
-        body = {"model": client.model, "max_tokens": 4096,
+        # a generous budget: at 1024 (and even 4096, once the agent was confused)
+        # the model's reasoning could use up the budget and return an empty
+        # answer, which handicapped the screenshot agent (an unfair race)
+        body = {"model": client.model, "max_tokens": 8192,
                 "response_format": {"type": "json_schema",
                                     "json_schema": {"name": "slow", "schema": SLOW_SCHEMA}},
                 "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": slow_prompt(goal, view["width"], view["height"],
+                    # tell the model the screenshot's REAL size: coordinates are read off it
+                    {"type": "text", "text": slow_prompt(goal, shot_size[0], shot_size[1],
                                                          history)},
                     {"type": "image_url", "image_url": {"url": data_uri}},
                 ]}]}
         # same failure policy as Quiff's loop: retry once, then stop honestly
+        call_started = time.perf_counter()
         parsed, error = await asyncio.to_thread(_slow_decide, client, body)
         model_calls += 1
         if error:
             api_errors += 1
+            trace.append({"error": error, "call_ms": _ms(call_started)})
+            call_started = time.perf_counter()
             parsed, error = await asyncio.to_thread(_slow_decide, client, body)
             model_calls += 1
             if error:
                 api_errors += 1
+                trace.append({"error": error, "call_ms": _ms(call_started)})
                 stop_reason = f"api error: {error}"
                 break
+        call_ms = _ms(call_started)
         action = parsed.get("action")
+        trace.append({"action": action, "x": parsed.get("x"), "y": parsed.get("y"),
+                      "text": str(parsed.get("text", ""))[:40], "call_ms": call_ms})
         if action == "done":
             said_done = True  # the model's own claim; the checks decide
             stop_reason = "model said done"
@@ -149,6 +159,10 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
         history.append(f"{action} at ({parsed.get('x')},{parsed.get('y')}) "
                        f"{parsed.get('text', '')}".strip())
         await observer.wait_settled()
+        try:
+            trace[-1]["url_after"] = (await observer.target_info()).get("url", "")
+        except Exception:
+            pass
 
     elapsed = time.perf_counter() - started
     checks = await run_checks(task.checks, answer=None, page=page, sandbox=sandbox,
@@ -156,7 +170,24 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
     return {"mode": "slow", "success": bool(said_done and all(c.ok for c in checks)),
             "elapsed_s": round(elapsed, 2), "model_calls": model_calls, "steps": len(history),
             "stop_reason": stop_reason, "said_done": said_done, "api_errors": api_errors,
-            "checks_pass": all(c.ok for c in checks)}
+            "checks_pass": all(c.ok for c in checks), "screenshot_px": shot_size,
+            "viewport_px": [view["width"], view["height"]] if shot_size else None,
+            "trace": trace}
+
+
+def _ms(started: float) -> int:
+    return int((time.perf_counter() - started) * 1000)
+
+
+def _png_size(b64_png: str) -> list[int] | None:
+    """Width and height from a base64 PNG's header (bytes 16-24 of the IHDR chunk)."""
+    import base64
+
+    try:
+        head = base64.b64decode(b64_png[:64])
+        return [int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")]
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------------------- quiff + replay

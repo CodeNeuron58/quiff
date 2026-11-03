@@ -96,7 +96,7 @@ def local_task() -> Task:
     )
 
 
-async def race(runs: int) -> dict:
+async def race(runs: int, modes: tuple[str, ...] = ("slow", "quiff", "replay")) -> dict:
     load_env()
     server = serve()
     task = local_task()
@@ -109,24 +109,16 @@ async def race(runs: int) -> dict:
         client = muse_spark()
         # a FRESH browser per run: identical conditions for every mode and
         # every run — the warm-tab input quirk (documented) can't skew it
-        for i in range(runs):
-            observer = BrowserObserver(headless=True)
-            try:
-                results.append(await slow_run(client, observer, task))
-            finally:
-                await observer.stop()
-        for i in range(runs):
-            observer = BrowserObserver(headless=True)
-            try:
-                results.append(await quiff_run(observer, task))
-            finally:
-                await observer.stop()
-        for i in range(runs):
-            observer = BrowserObserver(headless=True)
-            try:
-                results.append(await replay_run(observer, task))
-            finally:
-                await observer.stop()
+        runners = {"slow": lambda obs: slow_run(client, obs, task),
+                   "quiff": lambda obs: quiff_run(obs, task),
+                   "replay": lambda obs: replay_run(obs, task)}
+        for mode in modes:
+            for i in range(runs):
+                observer = BrowserObserver(headless=True)
+                try:
+                    results.append(await runners[mode](observer))
+                finally:
+                    await observer.stop()
     finally:
         server.shutdown()
     return results
@@ -156,8 +148,10 @@ async def _plain(observer, decider, task):
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", type=int, default=3)
+    parser.add_argument("--modes", nargs="+", default=["slow", "quiff", "replay"],
+                        choices=["slow", "quiff", "replay"])
     args = parser.parse_args()
-    results = asyncio.run(race(args.runs))
+    results = asyncio.run(race(args.runs, tuple(args.modes)))
 
     summary = {}
     for mode in ("slow", "quiff", "replay"):
