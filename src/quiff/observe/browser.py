@@ -103,8 +103,40 @@ def _demote_off_site(rows: list[ActionRow], current_url: str) -> list[ActionRow]
     return on_site + away
 
 
-def _filter_viewport(rows: list[ActionRow], bounds: dict[int, tuple[int, int, int, int]],
-                     viewport: tuple[int, int]) -> list[ActionRow]:
+def _snapshot_bounds(snap: dict, device_pixel_ratio: float
+                     ) -> dict[int, tuple[float, float, float, float]]:
+    """backendNodeId -> (x, y, w, h) in CSS px, relative to the visible viewport.
+
+    DOMSnapshot reports layout boxes in DOCUMENT coordinates (they don't move
+    when the page scrolls) and in DEVICE pixels (headed on a 200% display every
+    number is doubled), with each document's scroll offset in the same device
+    units. Both are undone here. Without that, scrolling could never reveal a
+    control, and on scaled displays the lower half of every page was dropped
+    (probed on Chrome, Nov 3: "Submit order" at CSS y=599 came back as 1197).
+    """
+    ratio = device_pixel_ratio if device_pixel_ratio > 0 else 1.0
+    bounds: dict[int, tuple[float, float, float, float]] = {}
+    for doc in snap.get("documents", []):
+        layout = doc.get("layout", {})
+        node_index = layout.get("nodeIndex", [])
+        node_bounds = layout.get("bounds", [])
+        backend_ids = (doc.get("nodes", {}) or {}).get("backendNodeId", [])
+        scroll_x = doc.get("scrollOffsetX") or 0
+        scroll_y = doc.get("scrollOffsetY") or 0
+        # bounds are indexed by layout.nodeIndex, which is NOT the list
+        # position of backendNodeId — join through nodeIndex (probed:
+        # positional zip misassigned 4 of 5 bounds)
+        for i, ni in enumerate(node_index):
+            if i < len(node_bounds) and ni < len(backend_ids):
+                b = node_bounds[i]
+                if isinstance(b, list) and len(b) >= 4:
+                    bounds[backend_ids[ni]] = ((b[0] - scroll_x) / ratio, (b[1] - scroll_y) / ratio,
+                                               b[2] / ratio, b[3] / ratio)
+    return bounds
+
+
+def _filter_viewport(rows: list[ActionRow], bounds: dict[int, tuple[float, float, float, float]],
+                     viewport: tuple[float, float]) -> list[ActionRow]:
     """Keep rows whose bounding box intersects the viewport.
 
     Elements without known bounds (rare) are kept — truncation does not
@@ -794,42 +826,43 @@ class BrowserObserver:
             read_ms=elapsed_ms, page_key=page_key, omitted=omitted,
         )
 
-    async def _viewport_bounds(self) -> tuple[dict[int, tuple[int, int, int, int]], tuple[int, int]]:
-        """backendNodeId -> (x, y, w, h) from one DOMSnapshot, plus the viewport.
+    async def _viewport_bounds(self) -> tuple[dict[int, tuple[float, float, float, float]],
+                                              tuple[float, float]]:
+        """backendNodeId -> (x, y, w, h) in CSS px relative to what the viewport
+        shows right now, from one DOMSnapshot, plus the viewport's size.
 
         github.com exposes 100+ actionable rows page-wide; only what the
         viewport actually shows should reach the decision model (jev
         snapshot.js hit-tests; Cua caps at 24). One snapshot call, one dict.
         """
         assert self._cdp
-        view = {"width": 1280, "height": 900}
-        try:
-            w, h = (int(v) for v in self.window_size.split(","))
-            view = {"width": w, "height": h}
-        except (ValueError, AttributeError):
-            pass
+        width, height, ratio = await self._viewport_size()
         try:
             # computedStyles=[] is REQUIRED on current Chrome or the call is
             # rejected with Invalid parameters (probed on Chrome 156)
             snap = await self._cdp.call("DOMSnapshot.captureSnapshot",
                                         computedStyles=[], timeout=15.0)
         except BrowserError:
-            return {}, (view["width"], view["height"])
-        bounds: dict[int, tuple[int, int, int, int]] = {}
-        for doc in snap.get("documents", []):
-            layout = doc.get("layout", {})
-            node_index = layout.get("nodeIndex", [])
-            node_bounds = layout.get("bounds", [])
-            backend_ids = (doc.get("nodes", {}) or {}).get("backendNodeId", [])
-            # bounds are indexed by layout.nodeIndex, which is NOT the list
-            # position of backendNodeId — join through nodeIndex (probed:
-            # positional zip misassigned 4 of 5 bounds)
-            for i, ni in enumerate(node_index):
-                if i < len(node_bounds) and ni < len(backend_ids):
-                    b = node_bounds[i]
-                    if isinstance(b, list) and len(b) >= 4:
-                        bounds[backend_ids[ni]] = (b[0], b[1], b[2], b[3])
-        return bounds, (view["width"], view["height"])
+            return {}, (width, height)
+        return _snapshot_bounds(snap, ratio), (width, height)
+
+    async def _viewport_size(self) -> tuple[float, float, float]:
+        """(innerWidth, innerHeight, devicePixelRatio) of the page; the window
+        size (and ratio 1) if the page can't be asked."""
+        try:
+            w, h = (float(v) for v in self.window_size.split(","))
+        except (ValueError, AttributeError):
+            w, h = 1280.0, 900.0
+        try:
+            result = await self._cdp.call(
+                "Runtime.evaluate", returnByValue=True, timeout=5.0,
+                expression="[innerWidth, innerHeight, devicePixelRatio]")
+            iw, ih, ratio = result["result"]["value"]
+            if iw > 0 and ih > 0 and ratio > 0:
+                return float(iw), float(ih), float(ratio)
+        except (BrowserError, KeyError, TypeError, ValueError):
+            pass
+        return w, h, 1.0
 
     async def _page_key(self) -> str | None:
         """A cheap fingerprint of the page the table was read from.
