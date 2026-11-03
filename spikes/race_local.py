@@ -115,8 +115,16 @@ async def race(runs: int, modes: tuple[str, ...] = ("slow", "quiff", "replay")) 
         for mode in modes:
             for i in range(runs):
                 observer = BrowserObserver(headless=True)
+                started = time.perf_counter()
                 try:
                     results.append(await runners[mode](observer))
+                except Exception as exc:
+                    # one broken run is a failed run, recorded with its reason,
+                    # never a crash that loses the whole batch
+                    results.append({"mode": mode, "success": False,
+                                    "elapsed_s": round(time.perf_counter() - started, 2),
+                                    "model_calls": None, "steps": None,
+                                    "stop_reason": f"crashed: {type(exc).__name__}: {exc}"[:200]})
                 finally:
                     await observer.stop()
     finally:

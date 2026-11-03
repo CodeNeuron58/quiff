@@ -111,7 +111,12 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
     await observer.open(task.start["url"])
     await observer.wait_settled()
     for _ in range(max_steps):
-        shot = await observer.connection().call("Page.captureScreenshot", format="png")
+        try:
+            shot = await _screenshot(observer)
+        except Exception as exc:
+            trace.append({"error": f"screenshot failed: {exc}"[:160]})
+            stop_reason = f"screenshot failed: {exc}"[:120]
+            break
         w, h = (int(v) for v in observer.window_size.split(","))
         view = {"width": w, "height": h}
         shot_size = _png_size(shot["data"]) or [view["width"], view["height"]]
@@ -173,6 +178,20 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
             "checks_pass": all(c.ok for c in checks), "screenshot_px": shot_size,
             "viewport_px": [view["width"], view["height"]] if shot_size else None,
             "trace": trace}
+
+
+async def _screenshot(observer) -> dict:
+    """A screenshot with the same resilience Quiff's own reads get: a capture
+    requested mid-navigation can hang, so let the page settle and retry."""
+    from quiff.observe.browser import BrowserError
+
+    for attempt in range(3):
+        try:
+            return await observer.call("Page.captureScreenshot", format="png", timeout=15.0)
+        except BrowserError:
+            if attempt == 2:
+                raise
+            await observer.wait_settled()
 
 
 def _ms(started: float) -> int:
