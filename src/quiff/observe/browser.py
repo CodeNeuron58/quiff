@@ -135,6 +135,27 @@ class BrowserError(RuntimeError):
     pass
 
 
+def _kill_processes_using(profile_dir: str) -> None:
+    """End every chrome.exe whose command line names this private profile.
+
+    The profile is a fresh temp folder unique to one observer, so this can
+    only ever match the browser Quiff itself launched.
+    """
+    marker = Path(profile_dir).name  # e.g. quiff-chrome-k3j9x2 (unique per run)
+    if not marker.startswith("quiff-chrome-"):
+        return  # never match anything that isn't one of our temp profiles
+    script = (
+        "Get-CimInstance Win32_Process -Filter \"name='chrome.exe'\" | "
+        f"Where-Object {{ $_.CommandLine -like '*{marker}*' }} | "
+        "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
+    )
+    try:
+        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+                       capture_output=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 class CDPConnection:
     """A tiny DevTools Protocol client: JSON messages over one WebSocket.
 
@@ -404,10 +425,21 @@ class BrowserObserver:
             await self._settle()
 
     async def stop(self) -> None:
+        """Shut down the Chrome this observer launched, completely.
+
+        On Windows the chrome.exe we start hands off to the real browser
+        process and exits, so killing it alone leaked the browser (and its
+        debugging port) after every run. Close the browser through DevTools,
+        then make sure nothing using our private profile survives.
+        """
         if self._cdp:
             await self._cdp.__aexit__(None, None, None)
             self._cdp = None
         self._target_id = None
+        launched = self._process is not None
+        if launched and self._auto_port:
+            # the port came from OUR profile, so this browser is ours to close
+            await self._close_browser()
         if self._process:
             self._process.terminate()
             try:
@@ -415,11 +447,52 @@ class BrowserObserver:
             except subprocess.TimeoutExpired:
                 self._process.kill()
             self._process = None
+        if launched and self._user_data_dir and not await self._port_closed(timeout=3.0):
+            _kill_processes_using(self._user_data_dir)
         if self._user_data_dir:
-            shutil.rmtree(self._user_data_dir, ignore_errors=True)
+            for _ in range(10):  # files stay locked for a moment after exit
+                shutil.rmtree(self._user_data_dir, ignore_errors=True)
+                if not Path(self._user_data_dir).exists():
+                    break
+                await asyncio.sleep(0.3)
             self._user_data_dir = None
         if self._auto_port:
             self.port = 0  # the next start picks a fresh port
+
+    async def _close_browser(self) -> None:
+        """Ask the browser itself to quit (Browser.close), never raising."""
+        try:
+            raw = urllib.request.urlopen(
+                f"http://127.0.0.1:{self.port}/json/version", timeout=2.0).read()
+            ws_url = json.loads(raw).get("webSocketDebuggerUrl")
+            if not ws_url:
+                return
+            connection = await CDPConnection(ws_url).__aenter__()
+            try:
+                await connection.call("Browser.close", timeout=3.0)
+            except Exception:
+                pass  # the browser often drops the socket while closing
+            finally:
+                try:
+                    await connection.__aexit__(None, None, None)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    async def _port_closed(self, timeout: float) -> bool:
+        """True once nothing answers on our debugging port any more."""
+        if not self.port:
+            return True
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{self.port}/json/version",
+                                       timeout=0.5).read()
+            except (urllib.error.URLError, OSError):
+                return True
+            await asyncio.sleep(0.2)
+        return False
 
     def start(self) -> None:
         if self._process:
