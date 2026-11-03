@@ -43,6 +43,17 @@ class ModelError(RuntimeError):
     pass
 
 
+class TruncatedError(ModelError):
+    """The reply hit max_tokens before the answer was complete (finish_reason=length).
+
+    Kept apart from invalid JSON on purpose: a cut-off reply says the token
+    budget was too small, not that the model can't follow the schema."""
+
+
+class InvalidJSONError(ModelError):
+    """The reply finished normally but its content is not valid JSON."""
+
+
 @dataclass
 class ModelReply:
     content: str
@@ -50,6 +61,7 @@ class ModelReply:
     input_tokens: int
     output_tokens: int
     model: str
+    finish_reason: str = ""
 
 
 class ChatClient:
@@ -111,7 +123,7 @@ class ChatClient:
         if not content and choice.get("finish_reason") == "length":
             reasoning = (data.get("usage", {}).get("completion_tokens_details", {})
                          .get("reasoning_tokens", 0))
-            raise ModelError(
+            raise TruncatedError(
                 f"hit max_tokens: the model spent {reasoning} tokens reasoning and never "
                 f"wrote the answer — raise max_tokens"
             )
@@ -122,6 +134,7 @@ class ChatClient:
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
             model=data.get("model", self.model),
+            finish_reason=choice.get("finish_reason") or "",
         )
 
     def structured(self, prompt: str, schema: dict, *, name: str = "reply",
@@ -132,7 +145,12 @@ class ChatClient:
         try:
             return json.loads(reply.content), reply
         except json.JSONDecodeError as exc:
-            raise ModelError(f"invalid JSON from {reply.model}: {reply.content[:200]}") from exc
+            if reply.finish_reason == "length":
+                raise TruncatedError(
+                    f"hit max_tokens ({max_tokens}) mid-answer: raise max_tokens"
+                ) from exc
+            raise InvalidJSONError(
+                f"invalid JSON from {reply.model}: {reply.content[:200]}") from exc
 
     def close(self) -> None:
         self._http.close()
@@ -148,17 +166,34 @@ def muse_spark(timeout: float = 60.0) -> ChatClient:
                       timeout=timeout)
 
 
-def muse_spark_open() -> ChatClient:
-    """The open-weights client on Baseten; key from .env (BASETEN_API_KEY)."""
+def muse_spark_open(timeout: float = 60.0) -> ChatClient:
+    """Muse Spark Open on a partner host (Modal, Baseten or Fireworks), set in .env.
+
+    MUSE_OPEN_BASE_URL  the host's OpenAI-style base URL (default: Baseten);
+                        Modal shared endpoints: https://inference.us-west.modal.direct/v1
+    MUSE_OPEN_API_KEY   the host's key (Modal: the proxy token, id.secret);
+                        falls back to BASETEN_API_KEY
+    MUSE_OPEN_MODEL     the host's model id (Modal: the shared endpoint's hostname)
+    """
     load_env()
-    key = os.environ.get("BASETEN_API_KEY")
+    key = os.environ.get("MUSE_OPEN_API_KEY") or os.environ.get("BASETEN_API_KEY")
     if not key:
-        raise ModelError("BASETEN_API_KEY is not set; request Baseten credits first")
+        raise ModelError("MUSE_OPEN_API_KEY is not set; put the partner's key in .env")
     return ChatClient(
         api_key=key,
         model=os.environ.get("MUSE_OPEN_MODEL", "meta-models/muse-spark-open-1026"),
-        base_url="https://inference.baseten.co/v1",
+        base_url=os.environ.get("MUSE_OPEN_BASE_URL", "https://inference.baseten.co/v1"),
+        timeout=timeout,
     )
+
+
+def make_client(which: str = "meta", timeout: float = 60.0) -> ChatClient:
+    """'meta': Muse Spark on the Meta Model API; 'open': Muse Spark Open on a partner host."""
+    if which == "open":
+        return muse_spark_open(timeout=timeout)
+    if which == "meta":
+        return muse_spark(timeout=timeout)
+    raise ModelError(f"unknown model {which!r}: use 'meta' or 'open'")
 
 
 # The decision schema: one request answers all four questions (and batches rows).

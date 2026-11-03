@@ -1,0 +1,34 @@
+{
+  "model": "muse-spark-1.3",
+  "efforts": {
+    "minimal": {
+      "latency_ms": [
+        633,
+        1071,
+        1456,
+        1764,
+        2403
+      ],
+      "latency_median_ms": 1456,
+      "errors": 0,
+      "valid_json_pct": 100.0,
+      "correct_row_pct": 100.0,
+      "decision_median_ms": 1480.0
+    },
+    "low": {
+      "latency_ms": [
+        971,
+        1085,
+        1095,
+        2164,
+        2312
+      ],
+      "latency_median_ms": 1095,
+      "errors": 0,
+      "valid_json_pct": 55.0,
+      "correct_row_pct": 55.0,
+      "decision_median_ms": 2059
+    }
+  },
+  "verdict": "GO: fast enough for the full plan"
+}

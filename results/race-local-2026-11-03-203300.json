@@ -1,0 +1,1291 @@
+{
+  "provenance": {
+    "commit": "f3862b1",
+    "uncommitted_changes": true,
+    "measured_at": "2026-11-03 20:33:00 +0530"
+  },
+  "settings": {
+    "model": "muse-spark-1.3",
+    "model_host": "meta",
+    "effort_both_agents": "minimal",
+    "max_tokens_both_agents": 8192,
+    "rescuer_effort": "high",
+    "approvals": "granted automatically and counted",
+    "quiff_without": "the planning call and app guidance that `quiff run` adds",
+    "browser": "a fresh headless Chrome per run; times include launching it"
+  },
+  "runs_per_mode": 5,
+  "results": [
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 114.83,
+      "model_calls": 26,
+      "steps": 25,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 1,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 164,
+          "y": 74,
+          "text": "Asha Rao",
+          "call_ms": 4072,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 154,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 3572,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 159,
+          "y": 148,
+          "text": "asha@example.com",
+          "call_ms": 2117,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 259,
+          "text": "",
+          "call_ms": 2267,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 3735,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 5802,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 4380,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 441,
+          "text": "",
+          "call_ms": 3114,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 4080,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 7335,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3064,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4892,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 5820,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3824,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 5594,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 442,
+          "text": "",
+          "call_ms": 2740,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5174,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "call_ms": 3599
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3726,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3581,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3732,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4678,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4399,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3540,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 5332,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3587,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 97.1,
+      "model_calls": 25,
+      "steps": 25,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 204,
+          "y": 74,
+          "text": "Asha Rao",
+          "call_ms": 1898,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 135,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 2007,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 197,
+          "y": 148,
+          "text": "asha@example.com",
+          "call_ms": 1689,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 258,
+          "text": "",
+          "call_ms": 1754,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 2518,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 449,
+          "text": "",
+          "call_ms": 2959,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 5673,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 4629,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3355,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 3394,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 3293,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 442,
+          "text": "",
+          "call_ms": 3121,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 441,
+          "text": "",
+          "call_ms": 6381,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 442,
+          "text": "",
+          "call_ms": 3818,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 441,
+          "text": "",
+          "call_ms": 2401,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4277,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 3581,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4036,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5349,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 442,
+          "text": "",
+          "call_ms": 4897,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 3504,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 470,
+          "text": "",
+          "call_ms": 3673,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 3427,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5937,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 4041,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 113.2,
+      "model_calls": 26,
+      "steps": 25,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 1,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 164,
+          "y": 75,
+          "text": "Asha Rao",
+          "call_ms": 1812,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 168,
+          "y": 113,
+          "text": "9876543210",
+          "call_ms": 1794,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 159,
+          "y": 148,
+          "text": "asha@example.com",
+          "call_ms": 2033,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 257,
+          "text": "",
+          "call_ms": 2158,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 2022,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3951,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 441,
+          "text": "",
+          "call_ms": 4179,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5606,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4029,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4268,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4076,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "call_ms": 4543
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 3340,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 4803,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 7665,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 6588,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 6235,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 2513,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5168,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5108,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4208,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4928,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 1935,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4877,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 6471,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3830,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 109.57,
+      "model_calls": 25,
+      "steps": 25,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 164,
+          "y": 75,
+          "text": "Asha Rao",
+          "call_ms": 2688,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 138,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 1825,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 160,
+          "y": 149,
+          "text": "asha@example.com",
+          "call_ms": 1727,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 257,
+          "text": "",
+          "call_ms": 1877,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3249,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 4308,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4408,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 415,
+          "text": "",
+          "call_ms": 4500,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 450,
+          "text": "",
+          "call_ms": 2346,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 4070,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 449,
+          "text": "",
+          "call_ms": 8412,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 477,
+          "text": "",
+          "call_ms": 3360,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 449,
+          "text": "",
+          "call_ms": 4813,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 477,
+          "text": "",
+          "call_ms": 5318,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 577,
+          "text": "",
+          "call_ms": 4024,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 5586,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 3542,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 477,
+          "text": "",
+          "call_ms": 10185,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 6053,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 477,
+          "text": "",
+          "call_ms": 4170,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 476,
+          "text": "",
+          "call_ms": 2723,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 4226,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 4090,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 572,
+          "text": "",
+          "call_ms": 2308,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 4486,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 102.41,
+      "model_calls": 25,
+      "steps": 25,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 161,
+          "y": 74,
+          "text": "Asha Rao",
+          "call_ms": 2175,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 140,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 1662,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 159,
+          "y": 148,
+          "text": "asha@example.com",
+          "call_ms": 1270,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 34,
+          "y": 258,
+          "text": "",
+          "call_ms": 1403,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 33,
+          "y": 441,
+          "text": "",
+          "call_ms": 2129,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 4393,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 2738,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 2378,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 414,
+          "text": "",
+          "call_ms": 4137,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 5297,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4602,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 4490,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 441,
+          "text": "",
+          "call_ms": 2048,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 33,
+          "y": 442,
+          "text": "",
+          "call_ms": 4373,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 442,
+          "text": "",
+          "call_ms": 4005,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 4935,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 2723,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3767,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5196,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4939,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3692,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 12769,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4690,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 4978,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3014,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 27.59,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "Submit clicked OK and order received page shown, all fields filled \u00b7 muse-spark-1.3 \u00b7 3139 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 30.34,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "muse-spark-1.3 \u00b7 5035 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 25.61,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "Form filled and Submit clicked, page shows Order received \u00b7 muse-spark-1.3 \u00b7 3470 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 24.17,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "All fields filled and Submit clicked OK \u00b7 muse-spark-1.3 \u00b7 2962 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 24.67,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "All form fields filled and Submit clicked successfully \u00b7 muse-spark-1.3 \u00b7 3091 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.58,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.29,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.45,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.4,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.39,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    }
+  ],
+  "summary": {
+    "order": {
+      "slow": {
+        "runs": 5,
+        "successes": 0,
+        "median_s": 109.57,
+        "p95_s": 114.83,
+        "model_calls": [
+          26,
+          25,
+          26,
+          25,
+          25
+        ]
+      },
+      "quiff": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 25.61,
+        "p95_s": 30.34,
+        "model_calls": [
+          9,
+          9,
+          9,
+          9,
+          9
+        ]
+      },
+      "replay": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 2.4,
+        "p95_s": 2.58,
+        "model_calls": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  }
+}

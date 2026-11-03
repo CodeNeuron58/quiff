@@ -27,12 +27,20 @@ When the minimal decider is unsure, Muse Spark at high reasoning (the rescuer) t
 ## The Meta models in the loop
 
 - **Muse Spark** (`muse-spark-1.3`, Meta Model API), the decision model: one JSON-schema-structured call per step picks the action and row from the numbered table.
-  - **Go/no-go benchmark** (`spikes/model_probe.py`, one fixed row-picking prompt, 20 tries each): ~1.5 s median at minimal reasoning, 100% schema-valid, 100% correct row.
-  - **Real task runs** (bigger tables): about 2.4 s median per decision.
+  - **Go/no-go benchmark** (`spikes/model_probe.py`, one fixed row-picking prompt, 20 tries per effort, an 8,192-token budget; Nov 3): 100% schema-valid and 100% correct row at minimal, low and high effort; median decision 4.5 s at minimal. On Nov 1 the same probe measured 1.5 s at minimal: model latency varies a lot with load.
+  - **Real task runs** (bigger tables, Nov 1–2): about 2.4 s median per decision.
 - **Muse Spark at high reasoning:** plans the subgoals and rescues the loop (see above).
 - **Muse Spark Open** (`meta-models/muse-spark-open-1026` on Baseten): wired into the same decision interface (`muse_spark_open()`), **not yet run**, because Baseten credits didn't arrive during the hackathon.
 
-What the benchmark taught us: at *low* reasoning effort only 55% of replies were valid JSON, against 100% at minimal. For narrow, well-structured picks, more thinking made the output less reliable, so the decider runs at minimal and the verification layer catches the rest.
+What the benchmark taught us: for a narrow, well-structured pick, more reasoning buys nothing and costs time. Every effort chose the right row in 20 of 20 tries; low effort took 1.3× and high effort 1.7× as long as minimal, writing 1.8× and 2.4× as many tokens. The decider runs at minimal, and the verification layer catches the rest.
+
+| Effort | Median decision | Right row | Valid JSON | Cut off (budget) | Median output tokens |
+|---|---|---|---|---|---|
+| minimal | 4.5 s | 100% | 100% | 0% | 286 |
+| low | 5.7 s | 100% | 100% | 0% | 512.5 |
+| high | 7.6 s | 100% | 100% | 0% | 673.5 |
+
+[Chart](results/effort-study.svg) · [data](results/model-probe-2026-11-03-200851.json). An earlier README said only 55% of low-effort replies were valid JSON. That probe capped replies at 512 tokens, and low effort's median reply is about 512 tokens, so about half were cut off mid-answer. With room to finish, low effort is 100% valid.
 
 ## Safety by construction
 
@@ -51,26 +59,31 @@ What the benchmark taught us: at *low* reasoning effort only 55% of replies were
 ### The race: screenshot agent vs Quiff vs replay
 
 Setup:
-- **Task:** one login task on a local, deterministic page (`spikes/race_local.py`).
-- **Browser:** a fresh headless Chrome for every run.
-- **Runs:** 5 per mode, measured Nov 3, 2026 at commit `0b6e4ed`.
-- **Data:** `results/race-local-2026-11-03-0639-final.json`.
+- **Two tasks** on local, deterministic pages (`spikes/race_local.py`): a login (3 steps), and a 6-field pizza order form that ends at "Submit order" (a local copy of httpbin's form).
+- **Same model and settings for both agents:** Muse Spark (`muse-spark-1.3`) at minimal reasoning, an 8,192-token budget per call, and a 25-step cap. Quiff's rescuer (high reasoning) may step in when the decider is unsure; it never did in these runs.
+- **Approvals** are granted automatically and counted: "Submit order" asked once in every Quiff order run. The screenshot agent has no guard.
+- **Quiff runs without** the planning call and app guidance that `quiff run` adds.
+- **Browser:** a fresh headless Chrome for every run; times include launching it.
+- **Runs:** 5 per mode per task, measured Nov 3, 2026. Data: [login](results/race-local-2026-11-03-201914.json), [order form](results/race-local-2026-11-03-203300.json).
 
-| Mode | How it works | Success | Median time | Model calls per run |
-|---|---|---|---|---|
-| Screenshot agent | a screenshot + one Muse Spark vision call per step, pixel clicks (how today's computer-use agents work) | 5/5 | 27.9 s | 4–5 |
-| **Quiff** | the action table + Muse Spark at minimal reasoning | **5/5** | **15.8 s** | 4 |
-| **Replay** | the flow Quiff recorded, re-run | **5/5** | **2.2 s** | **0** |
+| Task | Mode | Success | Median | p95 | Model calls per run |
+|---|---|---|---|---|---|
+| Login | Screenshot agent: a screenshot + one Muse Spark vision call per step, pixel clicks | 5/5 | 16.1 s | 18.4 s | 4–5 |
+| Login | **Quiff**: the action table + one Muse Spark text call per step | **5/5** | **15.0 s** | 18.6 s | 4 |
+| Login | **Replay**: the flow Quiff recorded, re-run | **5/5** | **2.2 s** | 4.3 s | **0** |
+| Order form | Screenshot agent | **0/5** | 109.6 s (ran out of steps) | 114.8 s | 25–26 |
+| Order form | **Quiff** | **5/5** | **25.6 s** | 30.3 s | 9 |
+| Order form | **Replay** | **5/5** | **2.4 s** | 2.6 s | **0** |
 
 What it shows:
-- **Every mode completed every run.**
-- **Quiff was about 1.8× faster** than the screenshot agent, with the same number of model calls: each Quiff call carries a small text table instead of an image.
-- **Replay was about 13× faster** than the screenshot agent, and 7× faster than Quiff's first run, with no model calls at all.
+- **Login: about the same speed.** With matched settings, Quiff was only 1.07× faster than the screenshot agent (15.0 s vs 16.1 s). The earlier published 1.8× came mostly from the screenshot agent running at the model's default reasoning effort while Quiff ran at minimal.
+- **Order form: the screenshot agent never finished.** In all 5 runs it typed the three text fields and chose "Medium", then kept clicking at about (26, 414), 2–3 px above-left of the 13-px "Extra Cheese" checkbox (which spans x 28–41, y 416–429). The click never landed, so it tried again until it ran out of steps. Quiff acts on the control itself, never on coordinates: 5/5, every field right.
+- **Replay** repeats a task Quiff has done once, with zero model calls: 7× faster than the screenshot agent on the login, and 10.7× faster than Quiff's own first run on the order form.
 
 Caveats:
-- **It's one simple task on one machine,** and model latency varies with load.
-- **The screenshot agent is our stand-in** built on the same Muse Spark model, not a third-party product. It gets the same typing, key handling, settle-and-retry and token budget as Quiff.
-- **Timings include launching Chrome.**
+- **Two simple tasks on one machine,** and model latency varies with load.
+- **The screenshot agent is our stand-in** built on the same Muse Spark model, not a third-party product. It gets the same typing, key handling, settle-and-retry, effort, token budget and step cap as Quiff. A stronger vision model, or a zoom step, might hit the checkbox.
+- **The first order batch** gave the screenshot agent a 12-step cap against Quiff's 25. It failed the same way (0/5); the order numbers above come from the re-run with equal caps.
 - **Every batch from the day is in [`results/`](results/README.md),** including earlier ones run before the harness was made fair, with what changed in each.
 
 ### Task runs (live, Nov 1–2, 2026, dev machine in India)
@@ -118,7 +131,7 @@ uv run quiff run b05 --show            # watch it: status pill and ghost cursor
 uv run quiff run b04 --interactive --headed   # the approval guard asks before "Submit order"
 uv run quiff run d01                   # records a replayable flow (close Notepad first)
 uv run quiff run d01 --replay          # then replay it: no model calls
-uv run python spikes/race_local.py --runs 5    # the race, on a local deterministic page
+uv run python spikes/race_local.py --runs 5    # the race: 2 local tasks, both agents on the same settings
 uv run python spikes/regression.py --runs 3    # re-test the demo tasks on your machine
 uv run python spikes/model_probe.py    # the go/no-go benchmark
 ```

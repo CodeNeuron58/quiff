@@ -20,7 +20,7 @@ from pathlib import Path
 from quiff.act import _press_key, _select_all, combo_label
 from quiff.checks import run_checks
 from quiff.decide import Decision
-from quiff.loop import FastLoop
+from quiff.loop import MAX_STEPS, FastLoop
 from quiff.learn import StepLogger
 from quiff.models.meta import MuseDecider, muse_spark, load_env
 from quiff.observe.browser import BrowserObserver
@@ -28,6 +28,11 @@ from quiff.recall import FlowRecorder, ReplayDecider, load_flow
 from quiff.tasks import ObserverPage, get_task, load_tasks, sandbox_dir, setup_sandbox
 
 TASK_ID = "b05-test-login"
+
+# One setting for BOTH agents, so the race compares how each one sees the
+# screen (a screenshot vs Quiff's action table), not how hard each one thinks.
+RACE_EFFORT = "minimal"   # reasoning effort for every decision call, both agents
+RACE_MAX_TOKENS = 8192    # token budget per call, both agents (a cap, not a target)
 
 
 # ---------------------------------------------------------------- slow mode
@@ -95,7 +100,25 @@ def _slow_decide(client, body: dict) -> tuple[dict | None, str | None]:
         return None, f"{type(exc).__name__}: {exc}"[:160]
 
 
-async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
+def slow_request_body(model: str, prompt_text: str, data_uri: str,
+                      effort: str | None = RACE_EFFORT,
+                      max_tokens: int = RACE_MAX_TOKENS) -> dict:
+    """One screenshot-agent request: the same effort and token budget Quiff gets."""
+    body = {"model": model, "max_tokens": max_tokens,
+            "response_format": {"type": "json_schema",
+                                "json_schema": {"name": "slow", "schema": SLOW_SCHEMA}},
+            "messages": [{"role": "user", "content": [
+                {"type": "text", "text": prompt_text},
+                {"type": "image_url", "image_url": {"url": data_uri}},
+            ]}]}
+    if effort:
+        body["reasoning_effort"] = effort
+    return body
+
+
+async def slow_run(client, observer, task, max_steps: int = MAX_STEPS,  # Quiff's step cap too
+                   effort: str | None = RACE_EFFORT,
+                   max_tokens: int = RACE_MAX_TOKENS) -> dict:
     started = time.perf_counter()
     goal = task.goal
     sandbox = sandbox_dir(task)
@@ -121,18 +144,11 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
         view = {"width": w, "height": h}
         shot_size = _png_size(shot["data"]) or [view["width"], view["height"]]
         data_uri = "data:image/png;base64," + shot["data"]
-        # a generous budget: at 1024 (and even 4096, once the agent was confused)
-        # the model's reasoning could use up the budget and return an empty
-        # answer, which handicapped the screenshot agent (an unfair race)
-        body = {"model": client.model, "max_tokens": 8192,
-                "response_format": {"type": "json_schema",
-                                    "json_schema": {"name": "slow", "schema": SLOW_SCHEMA}},
-                "messages": [{"role": "user", "content": [
-                    # tell the model the screenshot's REAL size: coordinates are read off it
-                    {"type": "text", "text": slow_prompt(goal, shot_size[0], shot_size[1],
-                                                         history)},
-                    {"type": "image_url", "image_url": {"url": data_uri}},
-                ]}]}
+        # the same effort and budget as Quiff (RACE_EFFORT, RACE_MAX_TOKENS); the
+        # prompt states the screenshot's REAL size: coordinates are read off it
+        body = slow_request_body(client.model,
+                                 slow_prompt(goal, shot_size[0], shot_size[1], history),
+                                 data_uri, effort=effort, max_tokens=max_tokens)
         # same failure policy as Quiff's loop: retry once, then stop honestly
         call_started = time.perf_counter()
         parsed, error = await asyncio.to_thread(_slow_decide, client, body)
@@ -211,12 +227,27 @@ def _png_size(b64_png: str) -> list[int] | None:
 
 # ---------------------------------------------------------------- quiff + replay
 
-async def _loop_run(observer, decider, task, mode: str, rescuer=None) -> dict:
+def auto_approver():
+    """The race's stand-in for a person at the approval guard: it says yes at
+    once and counts how often it was asked. A human's reaction time is not
+    what the race measures, and the screenshot agent has no guard at all."""
+    asked: list[str] = []
+
+    async def approve(reason: str) -> bool:
+        asked.append(reason)
+        return True
+
+    approve.asked = asked
+    return approve
+
+
+async def _loop_run(observer, decider, task, mode: str, rescuer=None, approver=None) -> dict:
     started = time.perf_counter()
     sandbox = setup_sandbox(task)
     logger = StepLogger(Path("runs") / f"race-{time.strftime('%Y%m%d-%H%M%S')}-{task.id}",
                         task.id)
-    loop = FastLoop(observer, decider, logger, rescuer=rescuer)
+    approver = approver or auto_approver()
+    loop = FastLoop(observer, decider, logger, rescuer=rescuer, approver=approver)
     result = await loop.run(task.goal, start_url=task.start["url"], subgoal=task.goal)
     from quiff.verify import wait_stable_url
 
@@ -233,13 +264,18 @@ async def _loop_run(observer, decider, task, mode: str, rescuer=None) -> dict:
             # every model request (decisions incl. the final "done", retries,
             # rescues); replay counts zero because it calls no model
             "model_calls": result.model_calls, "steps": result.steps,
-            "stop_reason": result.stop_reason, "rescues": result.rescues}
+            "stop_reason": result.stop_reason, "rescues": result.rescues,
+            "auto_approvals": len(getattr(approver, "asked", []))}
 
 
-async def quiff_run(observer, task) -> dict:
+async def quiff_run(observer, task, client=None, effort: str = RACE_EFFORT,
+                    max_tokens: int = RACE_MAX_TOKENS) -> dict:
     # records what it did: the replay mode replays a flow Quiff recorded in this race
-    decider = FlowRecorder(MuseDecider(effort="minimal"), task.id, task.goal)
-    rescuer = MuseDecider(effort="high", max_tokens=4096)
+    decider = FlowRecorder(MuseDecider(client=client, effort=effort, max_tokens=max_tokens),
+                           task.id, task.goal)
+    # the rescuer thinks hard by design; it only steps in when the decider is
+    # unsure or stuck (the result's "rescues" says how often that happened)
+    rescuer = MuseDecider(client=client, effort="high", max_tokens=max_tokens)
     result = await _loop_run(observer, decider, task, "quiff", rescuer=rescuer)
     if result["success"]:
         decider.save_if_ran(True)
@@ -284,7 +320,7 @@ async def race(runs: int) -> dict:
         for i in range(runs):
             results.append(await slow_run(client, observer, task))
         for i in range(runs):
-            results.append(await quiff_run(observer, task))
+            results.append(await quiff_run(observer, task, client=client))
         for i in range(runs):
             results.append(await replay_run(observer, task))
     finally:

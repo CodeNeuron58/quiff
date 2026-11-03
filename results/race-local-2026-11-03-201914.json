@@ -1,0 +1,1203 @@
+{
+  "provenance": {
+    "commit": "f3862b1",
+    "uncommitted_changes": true,
+    "measured_at": "2026-11-03 20:19:14 +0530"
+  },
+  "settings": {
+    "model": "muse-spark-1.3",
+    "model_host": "meta",
+    "effort_both_agents": "minimal",
+    "max_tokens_both_agents": 8192,
+    "rescuer_effort": "high",
+    "approvals": "granted automatically and counted",
+    "quiff_without": "the planning call and app guidance that `quiff run` adds",
+    "browser": "a fresh headless Chrome per run; times include launching it"
+  },
+  "runs_per_mode": 5,
+  "results": [
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 16.08,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 161,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 3630,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 134,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 2940,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 2970,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 3578
+        }
+      ],
+      "task": "login"
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 18.36,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 162,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 3004,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 160,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 2107,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 2580,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 5335,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 2566
+        }
+      ],
+      "task": "login"
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 17.64,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 162,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 2204,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 132,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 4093,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 2632,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 150,
+          "text": "",
+          "call_ms": 4402,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 1758
+        }
+      ],
+      "task": "login"
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 10.86,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 136,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 3244,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 136,
+          "y": 130,
+          "text": "SuperSecretPassword!",
+          "call_ms": 1482,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 1547,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 2428
+        }
+      ],
+      "task": "login"
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 14.33,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 162,
+          "y": 109,
+          "text": "tomsmith",
+          "call_ms": 1839,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "type",
+          "x": 159,
+          "y": 129,
+          "text": "SuperSecretPassword!",
+          "call_ms": 2538,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 149,
+          "text": "",
+          "call_ms": 1903,
+          "url_after": "http://127.0.0.1:8765/login"
+        },
+        {
+          "action": "click",
+          "x": 25,
+          "y": 149,
+          "text": "",
+          "call_ms": 3440,
+          "url_after": "http://127.0.0.1:8765/secure"
+        },
+        {
+          "action": "done",
+          "x": 0,
+          "y": 0,
+          "text": "",
+          "call_ms": 2392
+        }
+      ],
+      "task": "login"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 15.24,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked after entering credentials, assuming secure area reached \u00b7 muse-spark-1.3 \u00b7 5488 ms",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 14.05,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked, assuming success \u00b7 muse-spark-1.3 \u00b7 3945 ms",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 14.7,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "muse-spark-1.3 \u00b7 5786 ms",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 15.0,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked OK, all login steps done \u00b7 muse-spark-1.3 \u00b7 4402 ms",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 18.62,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Logged in, now on /secure page \u00b7 muse-spark-1.3 \u00b7 3455 ms",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.31,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.07,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.15,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.04,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 4.31,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 0,
+      "task": "login"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 51.04,
+      "model_calls": 12,
+      "steps": 12,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 157,
+          "y": 75,
+          "text": "Asha Rao",
+          "call_ms": 3132,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 140,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 2231,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 160,
+          "y": 149,
+          "text": "asha@example.com",
+          "call_ms": 2829,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 256,
+          "text": "",
+          "call_ms": 1970,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 3805,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 4808,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3856,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 4426,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 4938,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 442,
+          "text": "",
+          "call_ms": 6241,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 6903,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 2771,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 49.22,
+      "model_calls": 12,
+      "steps": 12,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 157,
+          "y": 75,
+          "text": "Asha Rao",
+          "call_ms": 2247,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 137,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 3349,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 159,
+          "y": 148,
+          "text": "asha@example.com",
+          "call_ms": 2163,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 258,
+          "text": "",
+          "call_ms": 1399,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 441,
+          "text": "",
+          "call_ms": 2185,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 5245,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5261,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 33,
+          "y": 413,
+          "text": "",
+          "call_ms": 4339,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4197,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 6303,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 33,
+          "y": 441,
+          "text": "",
+          "call_ms": 3737,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5300,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 53.21,
+      "model_calls": 12,
+      "steps": 12,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 157,
+          "y": 74,
+          "text": "Asha Rao",
+          "call_ms": 1594,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 140,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 2446,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 159,
+          "y": 148,
+          "text": "asha@example.com",
+          "call_ms": 2680,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 34,
+          "y": 258,
+          "text": "",
+          "call_ms": 2496,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 414,
+          "text": "",
+          "call_ms": 3345,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 449,
+          "text": "",
+          "call_ms": 4688,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 414,
+          "text": "",
+          "call_ms": 6248,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 4205,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 8881,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 414,
+          "text": "",
+          "call_ms": 6053,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4177,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 442,
+          "text": "",
+          "call_ms": 3196,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 50.03,
+      "model_calls": 12,
+      "steps": 12,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 163,
+          "y": 74,
+          "text": "Asha Rao",
+          "call_ms": 1929,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 164,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 2341,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 160,
+          "y": 149,
+          "text": "asha@example.com",
+          "call_ms": 2445,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 257,
+          "text": "",
+          "call_ms": 2411,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3853,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 450,
+          "text": "",
+          "call_ms": 3071,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4613,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 413,
+          "text": "",
+          "call_ms": 5824,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 527,
+          "text": "",
+          "call_ms": 3584,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 4946,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 7737,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 442,
+          "text": "",
+          "call_ms": 4043,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 43.72,
+      "model_calls": 12,
+      "steps": 12,
+      "stop_reason": "max steps",
+      "said_done": false,
+      "api_errors": 0,
+      "checks_pass": false,
+      "screenshot_px": [
+        1254,
+        800
+      ],
+      "viewport_px": [
+        1280,
+        900
+      ],
+      "trace": [
+        {
+          "action": "type",
+          "x": 201,
+          "y": 74,
+          "text": "Asha Rao",
+          "call_ms": 1788,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 168,
+          "y": 112,
+          "text": "9876543210",
+          "call_ms": 1919,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "type",
+          "x": 197,
+          "y": 147,
+          "text": "asha@example.com",
+          "call_ms": 1559,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 33,
+          "y": 258,
+          "text": "",
+          "call_ms": 2742,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 2147,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 449,
+          "text": "",
+          "call_ms": 3099,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 413,
+          "text": "",
+          "call_ms": 5013,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 33,
+          "y": 414,
+          "text": "",
+          "call_ms": 5733,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 32,
+          "y": 442,
+          "text": "",
+          "call_ms": 4767,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 3071,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 26,
+          "y": 414,
+          "text": "",
+          "call_ms": 5455,
+          "url_after": "http://127.0.0.1:8765/order"
+        },
+        {
+          "action": "click",
+          "x": 27,
+          "y": 414,
+          "text": "",
+          "call_ms": 3027,
+          "url_after": "http://127.0.0.1:8765/order"
+        }
+      ],
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 24.38,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "Form filled and submit clicked OK \u00b7 muse-spark-1.3 \u00b7 3180 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 24.6,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "muse-spark-1.3 \u00b7 3248 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 26.03,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "Submit clicked OK and order received page shown, all fields previously filled \u00b7 muse-spark-1.3 \u00b7 3537 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 25.36,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "Form filled and Submit order clicked successfully, subgoal complete \u00b7 muse-spark-1.3 \u00b7 3172 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 23.43,
+      "model_calls": 9,
+      "steps": 8,
+      "stop_reason": "Form filled and Submit clicked successfully \u00b7 muse-spark-1.3 \u00b7 3586 ms",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.47,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.33,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.5,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.36,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.26,
+      "model_calls": 0,
+      "steps": 8,
+      "stop_reason": "flow finished",
+      "rescues": 0,
+      "auto_approvals": 1,
+      "task": "order"
+    }
+  ],
+  "summary": {
+    "login": {
+      "slow": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 16.08,
+        "p95_s": 18.36,
+        "model_calls": [
+          4,
+          5,
+          5,
+          4,
+          5
+        ]
+      },
+      "quiff": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 15.0,
+        "p95_s": 18.62,
+        "model_calls": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "replay": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 2.15,
+        "p95_s": 4.31,
+        "model_calls": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "order": {
+      "slow": {
+        "runs": 5,
+        "successes": 0,
+        "median_s": 50.03,
+        "p95_s": 53.21,
+        "model_calls": [
+          12,
+          12,
+          12,
+          12,
+          12
+        ]
+      },
+      "quiff": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 24.6,
+        "p95_s": 26.03,
+        "model_calls": [
+          9,
+          9,
+          9,
+          9,
+          9
+        ]
+      },
+      "replay": {
+        "runs": 5,
+        "successes": 5,
+        "median_s": 2.36,
+        "p95_s": 2.5,
+        "model_calls": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  }
+}
