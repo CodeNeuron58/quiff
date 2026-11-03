@@ -86,9 +86,11 @@ def _slow_decide(client, body: dict) -> tuple[dict | None, str | None]:
     try:
         reply = client._http.post("/chat/completions", json=body)
         reply.raise_for_status()
-        content = reply.json()["choices"][0]["message"]["content"]
+        choice = reply.json()["choices"][0]
+        content = choice["message"]["content"]
         if not content:
-            return None, "empty reply"
+            # finish_reason "length" = the reasoning used up the whole token budget
+            return None, f"empty reply (finish_reason={choice.get('finish_reason')})"
         return json.loads(content), None
     except Exception as exc:  # HTTP error, timeout, malformed JSON
         return None, f"{type(exc).__name__}: {exc}"[:160]
@@ -112,7 +114,10 @@ async def slow_run(client, observer, task, max_steps: int = 12) -> dict:
         w, h = (int(v) for v in observer.window_size.split(","))
         view = {"width": w, "height": h}
         data_uri = "data:image/png;base64," + shot["data"]
-        body = {"model": client.model, "max_tokens": 1024,
+        # the same generous budget as Quiff's rescuer: at 1024 the model's
+        # reasoning could use up the budget and return an empty answer, which
+        # handicapped the screenshot agent (an unfair race)
+        body = {"model": client.model, "max_tokens": 4096,
                 "response_format": {"type": "json_schema",
                                     "json_schema": {"name": "slow", "schema": SLOW_SCHEMA}},
                 "messages": [{"role": "user", "content": [
