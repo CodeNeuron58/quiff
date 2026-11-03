@@ -182,7 +182,8 @@ def local_tasks() -> dict[str, Task]:
 
 async def race(runs: int, modes: tuple[str, ...] = ("slow", "quiff", "replay"),
                tasks: tuple[str, ...] = ("login", "order"), model: str = "meta",
-               effort: str = "minimal", max_tokens: int = 8192) -> list[dict]:
+               effort: str = "minimal", max_tokens: int = 8192,
+               headed: bool = False) -> list[dict]:
     load_env()
     server = serve()
     results: list[dict] = []
@@ -206,7 +207,7 @@ async def race(runs: int, modes: tuple[str, ...] = ("slow", "quiff", "replay"),
             }
             for mode in modes:
                 for i in range(runs):
-                    observer = BrowserObserver(headless=True)
+                    observer = BrowserObserver(headless=not headed)
                     started = time.perf_counter()
                     try:
                         result = await runners[mode](observer)
@@ -263,9 +264,12 @@ def main() -> None:
                         help="reasoning effort for BOTH agents' decision calls")
     parser.add_argument("--max-tokens", type=int, default=8192,
                         help="token budget per call for BOTH agents")
+    parser.add_argument("--headed", action="store_true",
+                        help="show the browser (for recording a demo; published numbers "
+                             "are measured headless)")
     args = parser.parse_args()
     results = asyncio.run(race(args.runs, tuple(args.modes), tuple(args.tasks), args.model,
-                               args.effort, args.max_tokens))
+                               args.effort, args.max_tokens, args.headed))
 
     summary = summarize(results)
     for name, modes in summary.items():

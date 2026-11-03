@@ -41,13 +41,13 @@ CHECKS = [{"type": "page_text", "contains": text} for text in (
     '"size": "{size}"', '"cheese"', '"onion"', '"comments": "{comments}"')]
 
 
-async def slow_batch(client, rows, effort, max_tokens) -> list[dict]:
+async def slow_batch(client, rows, effort, max_tokens, headed=False) -> list[dict]:
     from quiff.batch import batch_id
     from quiff.observe.browser import BrowserObserver
     from race import slow_run
 
     bid = batch_id(GOAL, START) + "-slow"
-    observer = BrowserObserver(headless=True)
+    observer = BrowserObserver(headless=not headed)
     results = []
     try:
         for index, row in enumerate(rows, 1):
@@ -71,7 +71,7 @@ async def slow_batch(client, rows, effort, max_tokens) -> list[dict]:
     return results
 
 
-async def quiff_batch(client, rows, effort, max_tokens) -> list[dict]:
+async def quiff_batch(client, rows, effort, max_tokens, headed=False) -> list[dict]:
     from quiff.observe.browser import BrowserObserver
     from race import auto_approver
 
@@ -81,7 +81,7 @@ async def quiff_batch(client, rows, effort, max_tokens) -> list[dict]:
                                              max_tokens=max_tokens), task.id, task.goal),
             rescuer=MuseDecider(client=client, effort="high", max_tokens=max_tokens))
 
-    observer = BrowserObserver(headless=True)
+    observer = BrowserObserver(headless=not headed)
     try:
         result = await run_batch(
             GOAL, START, rows, CHECKS, observer=observer, teacher=teacher,
@@ -116,7 +116,7 @@ async def main_async(args) -> dict:
         for mode in args.modes:
             print(f"{mode}:")
             runner = slow_batch if mode == "slow" else quiff_batch
-            results[mode] = await runner(client, rows, args.effort, args.max_tokens)
+            results[mode] = await runner(client, rows, args.effort, args.max_tokens, args.headed)
     finally:
         server.shutdown()
     summary = {mode: totals(rs) for mode, rs in results.items()}
@@ -145,6 +145,8 @@ def main() -> None:
     parser.add_argument("--model", choices=["meta", "open"], default="meta")
     parser.add_argument("--effort", default="minimal")
     parser.add_argument("--max-tokens", type=int, default=8192)
+    parser.add_argument("--headed", action="store_true",
+                        help="show the browser (for recording a demo; publish headless numbers)")
     args = parser.parse_args()
     out = asyncio.run(main_async(args))
     path = Path("runs") / f"batch-race-{time.strftime('%Y-%m-%d-%H%M%S')}.json"

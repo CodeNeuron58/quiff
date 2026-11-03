@@ -4,9 +4,35 @@
 
 *Fast hands for your AI.*
 
-Quiff is an engine that drives Windows desktop apps and Chrome. It reads the screen as structured data (the accessibility tree on Windows, the DevTools protocol in Chrome) instead of screenshots. Meta's Muse Spark picks each action from a numbered table of controls, plain code checks every result, irreversible actions wait for a human, and a task Quiff has completed once can be replayed with no model call at all.
+**Give your computer a chore once. Muse Spark works out how to do it, Quiff checks every result in code and asks before anything irreversible, and from then on it repeats the chore in seconds with zero AI calls.**
+
+![Quiff filling ten orders from a spreadsheet: the overlay names what decided each step and counts the AI calls](docs/batch.gif)
+
+| Same chore, same model | Screenshot agent | Quiff |
+|---|---|---|
+| Log in (median of 5) | 16.1 s · 4–5 AI calls | 15.0 s · 4 AI calls · replay 2.2 s, 0 calls |
+| Pizza order form, 6 fields (median of 5) | 0 of 5 done: out of steps after 109.6 s and 25–26 AI calls | 25.6 s · 9 AI calls · replay 2.4 s, 0 calls |
+| 10 orders from a CSV (`quiff batch`) | 0 of 10 done: 1,008 s, 252 AI calls | 10 of 10 · 32.6 s · 9 AI calls, all on row 1 |
+
+Both agents run Muse Spark at the same reasoning effort, token budget and step cap. On the login, Quiff is only slightly faster; the gap is on anything with small controls, where the screenshot agent kept clicking a few pixels beside a checkbox, and on everything Quiff has done before. Every number comes from a file in [`results/`](results/README.md) that records the commit that produced it; details under [Results](#results).
 
 > **Status: hackathon build (Nov 2026).** Working end to end on the tasks listed below, in the browser and on the Windows desktop, with Meta's models in the loop. Pre-alpha; Windows + Chrome only.
+
+## Who it's for
+
+Anyone who does the same browser or Windows chore again and again: typing orders, invoices or sign-ups from a spreadsheet into a web portal, filling the same forms, saving files where they belong. Today that means doing it by hand, paying someone to script it, or letting an AI agent look at a screenshot before every click, slowly, on every row. With Quiff, Muse Spark learns the chore once. After that it repeats for free, code checks every result, and a person approves anything that can't be undone.
+
+## How Meta's models do the work
+
+| Tier | Model | When | Share of steps |
+|---|---|---|---|
+| Replay | none | a chore it already learned (a flow, or a batch template) | 70% |
+| Decider | Muse Spark, minimal reasoning | every new step: one JSON-schema call picks a row from a numbered table of the controls on screen | 29% |
+| Planner | Muse Spark, high reasoning | once per new task | one call per task (not a step) |
+| Rescuer | Muse Spark, high reasoning | only when the decider is unsure or stuck (at most 3 per run) | 0% here; 13% across all logs since Oct 31 |
+| Open weights | Muse Spark Open on a partner host (`--model open`) | the same loop, end to end | wired, not yet run |
+
+"Share of steps" comes from `spikes/cascade_stats.py` over the runs on the final code (526 steps; see [Who did the work](#who-did-the-work)). What reasoning effort costs on one decision: every effort picked the right row 20 times out of 20, and low effort took 1.3× and high effort 1.7× as long as minimal ([chart](results/effort-study.svg)).
 
 ## Why
 
