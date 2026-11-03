@@ -1,166 +1,138 @@
-# Quiff
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-dark.svg">
+    <img src="docs/brand/logo-light.svg" alt="Quiff" width="360">
+  </picture>
+</p>
 
-[![CI](https://github.com/CodeNeuron58/quiff/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeNeuron58/quiff/actions/workflows/ci.yml)
+<h3 align="center">Give your computer a chore once.</h3>
 
-*Fast hands for your AI.*
+<p align="center">
+  Quiff does chores in real Windows apps and Chrome. Meta's Muse Spark works out the steps the first time,<br>
+  code checks every result, and from then on Quiff repeats the chore in seconds with zero AI calls.
+</p>
 
-**Give your computer a chore once. Muse Spark works out how to do it, Quiff checks every result in code and asks before anything irreversible, and from then on it repeats the chore in seconds with zero AI calls.**
+<p align="center">
+  <a href="https://github.com/CodeNeuron58/quiff/actions/workflows/ci.yml"><img src="https://github.com/CodeNeuron58/quiff/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/license-Apache%202.0-2D6AD1" alt="Apache 2.0 license">
+  <img src="https://img.shields.io/badge/replay-0%20AI%20calls-2D6AD1" alt="Replays make zero AI calls">
+  <img src="https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20Chrome-2D6AD1" alt="Runs on Windows and Chrome">
+  <a href="#built-during-the-hackathon"><img src="https://img.shields.io/badge/Meta-Global%20AI%20Hackathon%202026-0866FF?logo=meta&logoColor=white" alt="Built for the Meta Global AI Developer Hackathon"></a>
+</p>
 
-![Quiff filling ten orders from a spreadsheet: the overlay names what decided each step and counts the AI calls](docs/batch.gif)
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#the-numbers">The numbers</a> ·
+  <a href="docs/RESULTS.md">Evidence</a>
+</p>
 
-| Same chore, same model | Screenshot agent | Quiff |
-|---|---|---|
-| Log in (median of 5) | 16.1 s · 4–5 AI calls | 15.0 s · 4 AI calls · replay 2.2 s, 0 calls |
-| Pizza order form, 6 fields (median of 5) | 0 of 5 done: out of steps after 109.6 s and 25–26 AI calls | 25.6 s · 9 AI calls · replay 2.4 s, 0 calls |
-| 10 orders from a CSV (`quiff batch`) | 0 of 10 done: 1,008 s, 252 AI calls | 10 of 10 · 32.6 s · 9 AI calls, all on row 1 |
+<p align="center">
+  <img src="docs/demo.gif" alt="quiff batch filling ten orders from a spreadsheet: Muse Spark does row 1, the approval guard asks before Submit, rows 2 to 10 replay with zero AI calls" width="760"><br>
+  <sub>Ten orders from a spreadsheet: Muse Spark learns row 1, the guard asks before <i>Submit</i>, rows 2–10 replay with zero AI calls</sub>
+</p>
+<!-- When the demo video is up, add this line under the GIF:
+<p align="center"><sub>▶ <a href="https://youtu.be/VIDEO_ID">Watch the 3-minute demo</a></sub></p>
+-->
 
-Both agents run Muse Spark at the same reasoning effort, token budget and step cap. On the login, Quiff is only slightly faster; the gap is on anything with small controls, where the screenshot agent kept clicking a few pixels beside a checkbox, and on everything Quiff has done before. Every number comes from a file in [`results/`](results/README.md) that records the commit that produced it; details under [Results](#results).
+## What is Quiff?
 
-> **Status: hackathon build (Nov 2026).** Working end to end on the tasks listed below, in the browser and on the Windows desktop, with Meta's models in the loop. Pre-alpha; Windows + Chrome only.
+Quiff is an open-source computer-use engine for Windows and Chrome. Tell it a chore in plain words, or hand it a spreadsheet of them, and it does the work in real apps: a website's forms, Notepad, File Explorer.
+
+Quiff uses the model to learn a chore, not to repeat it. Once Muse Spark has done a chore, every repeat is a replay that takes seconds and makes no AI calls.
 
 ## Who it's for
 
-Anyone who does the same browser or Windows chore again and again: typing orders, invoices or sign-ups from a spreadsheet into a web portal, filling the same forms, saving files where they belong. Today that means doing it by hand, paying someone to script it, or letting an AI agent look at a screenshot before every click, slowly, on every row. With Quiff, Muse Spark learns the chore once. After that it repeats for free, code checks every result, and a person approves anything that can't be undone.
+Anyone whose work includes the same computer chore again and again, with new data each time:
+- an accountant copying invoice details from a spreadsheet into a client's web portal;
+- an operations team entering the day's orders into a supplier's order form;
+- an office admin adding new sign-ups, one by one, to the same web form.
+
+## How it works
+
+<table>
+  <tr>
+    <td width="33%" valign="top"><img src="docs/screenshots/readme-teach.png" alt="Quiff's overlay while Muse Spark fills in row 1: the pill says Typing into Telephone, Muse Spark (minimal), 2.7 s, 3 AI calls"></td>
+    <td width="33%" valign="top"><img src="docs/screenshots/readme-check.png" alt="The approval guard stops before Submit order: Clicking Submit order submits it for good, answer y or n"></td>
+    <td width="33%" valign="top"><img src="docs/screenshots/readme-repeat.png" alt="Row 4 of 10 replaying with zero new AI calls: 10 AI calls in total, all from row 1"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>1 · Teach</b><br>Muse Spark does the chore once. The screen becomes a numbered list of its controls, and the model picks one row per step, so it never guesses pixels.</td>
+    <td valign="top"><b>2 · Check</b><br>Code checks every result; the model's "done" is never the verdict. Anything irreversible, like <i>Submit</i>, <i>Pay</i> or <i>Delete</i>, waits for your yes.</td>
+    <td valign="top"><b>3 · Repeat</b><br>The run becomes a template. Each next row of your spreadsheet replays with its own values, in about a second, with zero AI calls.</td>
+  </tr>
+</table>
+
+## Quick start
+
+Windows, Chrome, Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync
+uv run quiff run b05 --replay --headed
+```
+
+> [!TIP]
+> This first run needs no API key: it replays a recorded login, with zero AI calls.
+
+With a Meta Model API key in `.env` (`META_API_KEY=...`, from [ai.developer.meta.com](https://ai.developer.meta.com)), give Quiff a goal of your own:
+
+```bash
+uv run quiff do "Log in with username tomsmith and password SuperSecretPassword!" \
+    --url https://the-internet.herokuapp.com/login --check-url "secure$" --headed
+```
+
+Or teach it the chore from the GIF. Start the local order form in a second terminal (`uv run python spikes/serve_forms.py`), then:
+
+```bash
+uv run quiff batch "Fill in the pizza order form: name {name}, phone {phone}, email {email}, size {size}, toppings cheese and onion, comments '{comments}'. Then submit it." \
+    --url http://127.0.0.1:8765/order --data tasks/batch/orders.csv \
+    --check-text '"custname": "{name}"' --interactive --show
+```
+
+At the approval, answer `a` to approve *Submit order* for every row. `--show` turns on the overlay; run `npm install` in `overlay/` once first.
+
+## Features
+
+- **Goals in plain words.** `quiff do "<goal>"` works in Chrome or a desktop app, with optional checks on the URL, the page text or a file.
+- **Teach once, repeat per row.** `quiff batch` gives row 1 of a CSV to Muse Spark, then replays every other row with its own values.
+- **Replay with zero AI calls.** A saved run finds each control again by its role and name, so small layout changes don't break it.
+- **No screenshots.** Windows UI Automation and Chrome's DevTools protocol turn the screen into a numbered list of controls.
+- **Checked by code.** The URL, the page text or a file decides whether a chore worked. Failed checks go back to the model for up to two corrections.
+- **An approval guard.** Submit, Send, Pay, Delete, downloads and overwrites wait for your yes.
+- **A rescuer.** When the fast decider is unsure or stuck, Muse Spark at high reasoning takes the step.
+- **An overlay to watch.** A status pill, a ghost cursor, and a meter: what decided each step, how long it took, the AI calls so far.
+- **Measured.** Every step is logged. A 20-task suite with automatic checks, plus timing and regression scripts that record the commit they ran on.
+
+## The numbers
+
+Measured Nov 3, 2026 on one Windows machine, with Meta's `muse-spark-1.3` at minimal reasoning. Each login and order-form run starts a fresh Chrome; times are medians of 5 runs.
+
+| Chore | First time: Muse Spark | Every time after: replay |
+|---|---|---|
+| Log in | 5 of 5 · 15.0 s · 4 AI calls | 5 of 5 · **2.2 s · 0 AI calls** |
+| Fill a 6-field order form | 5 of 5 · 25.6 s · 9 AI calls | 5 of 5 · **2.4 s · 0 AI calls** |
+| 10 orders from a spreadsheet | row 1 · 25.9 s · 9 AI calls | rows 2–10 · **about 0.7 s each · 0 AI calls** |
+
+All 10 orders passed their checks: 32.6 s and 9 AI calls for the whole spreadsheet. **[See the evidence →](docs/RESULTS.md)**
 
 ## How Meta's models do the work
 
 | Tier | Model | When | Share of steps |
 |---|---|---|---|
-| Replay | none | a chore it already learned (a flow, or a batch template) | 70% |
-| Decider | Muse Spark, minimal reasoning | every new step: one JSON-schema call picks a row from a numbered table of the controls on screen | 29% |
-| Planner | Muse Spark, high reasoning | once per new task | one call per task (not a step) |
-| Rescuer | Muse Spark, high reasoning | only when the decider is unsure or stuck (at most 3 per run) | 0% here; 13% across all logs since Oct 31 |
-| Open weights | Muse Spark Open on a partner host (`--model open`) | the same loop, end to end | wired, not yet run |
+| Replay | none | anything Quiff has done before | 70% |
+| Decider | Muse Spark, minimal reasoning | each new step: one JSON-schema call picks a row from the table | 29% |
+| Planner | Muse Spark, high reasoning | once per new task | one call per task |
+| Rescuer | Muse Spark, high reasoning | only when the decider is unsure or stuck | 0% here, 13% over all logs |
+| Open weights | Muse Spark Open (`--model open`) | the same loop, end to end | wired, not yet run |
 
-"Share of steps" comes from `spikes/cascade_stats.py` over the runs on the final code (526 steps; see [Who did the work](#who-did-the-work)). What reasoning effort costs on one decision: every effort picked the right row 20 times out of 20, and low effort took 1.3× and high effort 1.7× as long as minimal ([chart](results/effort-study.svg)).
+Every reasoning effort picked the right control 20 times out of 20, and higher effort only took longer (1.3× at low, 1.7× at high). So Quiff decides at minimal, and thinks hard only to plan or rescue. [Chart](results/effort-study.svg) · [who did the work](docs/RESULTS.md#who-did-the-work)
 
-## Why
+<details>
+<summary><b>Every command</b></summary>
 
-Today's computer-use agents are slow because a large model thinks before and after every click, not because clicking is slow. In the OSWorld-Human study (MLSys 2026), large-model calls took 90–97% of agent time, and one agent took 12 minutes to change line spacing. Quiff keeps the model's job small and lets code do the rest.
-
-## How it works
-
-| Stage | What it does |
-|---|---|
-| **Plan** | Muse Spark (high reasoning) writes a short plan of subgoals once, at the start. Every decision sees the plan as context; the loop doesn't step through the subgoals one by one. |
-| **Observe** | The screen becomes one numbered action table, e.g. `[12] button "Save" · enabled`, read from Windows UI Automation or Chrome's DevTools protocol. No screenshots. |
-| **Decide** | Muse Spark (minimal reasoning) answers one JSON-schema request per step: which action, which row, did the last step work, is the subgoal done. |
-| **Act** | Accessibility patterns (`Invoke`, `SetValue`) on Windows, DevTools input in Chrome, keyboard input as the fallback. Shared flows (Save As, menus, downloads) are driver skills. Irreversible actions wait for a human (see Safety). |
-| **Verify** | Plain code checks the result; the model's "done" is never trusted. When the model says done but the task's checks disagree, the failed checks are fed back for up to two correction rounds. |
-| **Learn** | Every step is logged (JSONL). A successful run is saved as a flow. |
-| **Replay** | `quiff run <task> --replay` re-runs a saved flow with **no model calls**, re-finding each control by role and name, so it survives layout shifts. `quiff batch` turns a flow into a template and replays it for every row of a CSV. (Per-step recall inside model runs is next.) |
-
-When the minimal decider is unsure, Muse Spark at high reasoning (the rescuer) takes the step. That happens on low confidence, two failed actions in a row, two failed decider calls, too many waits, or a detected loop. It's capped at 3 rescues per run, and a second loop stops the run honestly instead of burning time.
-
-## The Meta models in the loop
-
-- **Muse Spark** (`muse-spark-1.3`, Meta Model API), the decision model: one JSON-schema-structured call per step picks the action and row from the numbered table.
-  - **Go/no-go benchmark** (`spikes/model_probe.py`, one fixed row-picking prompt, 20 tries per effort, an 8,192-token budget; Nov 3): 100% schema-valid and 100% correct row at minimal, low and high effort; median decision 4.5 s at minimal. On Nov 1 the same probe measured 1.5 s at minimal: model latency varies a lot with load.
-  - **Real task runs** (bigger tables, Nov 1–2): about 2.4 s median per decision.
-- **Muse Spark at high reasoning:** plans the subgoals and rescues the loop (see above).
-- **Muse Spark Open** (open weights, on a partner host: Modal, Baseten or Fireworks, set with `MUSE_OPEN_*` in `.env`): wired into the same decision interface. `--model open` runs the plan, the decisions and the rescues on it, in `quiff run`, `quiff do` and the race. **Not yet run.**
-
-What the benchmark taught us: for a narrow, well-structured pick, more reasoning buys nothing and costs time. Every effort chose the right row in 20 of 20 tries; low effort took 1.3× and high effort 1.7× as long as minimal, writing 1.8× and 2.4× as many tokens. The decider runs at minimal, and the verification layer catches the rest.
-
-| Effort | Median decision | Right row | Valid JSON | Cut off (budget) | Median output tokens |
-|---|---|---|---|---|---|
-| minimal | 4.5 s | 100% | 100% | 0% | 286 |
-| low | 5.7 s | 100% | 100% | 0% | 512.5 |
-| high | 7.6 s | 100% | 100% | 0% | 673.5 |
-
-[Chart](results/effort-study.svg) · [data](results/model-probe-2026-11-03-200851.json). An earlier README said only 55% of low-effort replies were valid JSON. That probe capped replies at 512 tokens, and low effort's median reply is about 512 tokens, so about half were cut off mid-answer. With room to finish, low effort is 100% valid.
-
-### Who did the work
-
-Every step Quiff takes is logged with what decided it. `spikes/cascade_stats.py` counts them. Over the runs on the final code (Nov 3, evening: the race, the batch race, the batch and replay runs, and the live checks; 526 steps):
-
-| Tier | Steps | Share | Median decision |
-|---|---|---|---|
-| Replay (no model call) | 370 | 70% | — |
-| Muse Spark, minimal reasoning | 154 | 29% | 2.7 s |
-| Correction round (no model call) | 2 | 0% | — |
-
-The rescuer wasn't needed in these runs. Across every step logged since Oct 31 (2,350, development included), Muse Spark decided 54%, replay 27%, the rescuer 13% and scripts 4%. The planning call isn't a step, so it isn't counted here. Data: [final code](results/cascade-2026-11-03-final-code.json), [all logs](results/cascade-2026-11-03-all-logs.json).
-
-## Safety by construction
-
-- **Approval guard.** Actions that look irreversible wait for a human's yes (`--interactive`); without an approver, the run stops and says why. The guard covers:
-  - clicking Submit / Send / Pay / Delete / Place your order / Proceed to payment / Move to Trash / Cancel subscription / Unsubscribe / Merge pull request and the like (whole words, on buttons, links and menu items, so "Postal code", "PayPal" or a dialog's plain "Cancel" don't trigger it);
-  - Enter or Space that would trigger such a control, judged by what holds keyboard focus (Enter in a form whose submit button is "Submit order" asks first);
-  - Ctrl+Enter, Alt+S and Shift+Delete, plus Delete on desktop items;
-  - every download;
-  - any Save As that would overwrite a file or write outside the task's folder, and "Yes" in a "Confirm Save As" dialog, however the save was started.
-- **What the guard can't see.** It judges controls by their names, so an irreversible button with an unusual name can still get through. Navigating to a URL isn't checked, and a save typed by hand into a Save dialog is only caught at the overwrite confirmation, not when it writes a new file outside the task folder.
-- **Only its own windows.** Quiff follows the window it launched and the dialogs that window owns. It refuses to start while Notepad is open, never closes or edits the user's windows, and never sends a keystroke unless its own window is in front.
-- **Its own browser.** Every run uses a temporary Chrome profile on a port Chrome picks itself, never an existing browser.
-- **Secrets.** Text typed into password-like fields is redacted in step logs. Recorded flows keep real values so replay works; they stay local in the gitignored `runs/` folder.
-
-## Results
-
-### The race: screenshot agent vs Quiff vs replay
-
-Setup:
-- **Two tasks** on local, deterministic pages (`spikes/race_local.py`): a login (3 steps), and a 6-field pizza order form that ends at "Submit order" (a local copy of httpbin's form).
-- **Same model and settings for both agents:** Muse Spark (`muse-spark-1.3`) at minimal reasoning, an 8,192-token budget per call, and a 25-step cap. Quiff's rescuer (high reasoning) may step in when the decider is unsure; it never did in these runs.
-- **Approvals** are granted automatically and counted: "Submit order" asked once in every Quiff order run. The screenshot agent has no guard.
-- **Quiff runs without** the planning call and app guidance that `quiff run` adds.
-- **Browser:** a fresh headless Chrome for every run; times include launching it.
-- **Runs:** 5 per mode per task, measured Nov 3, 2026. Data: [login](results/race-local-2026-11-03-201914.json), [order form](results/race-local-2026-11-03-203300.json).
-
-| Task | Mode | Success | Median | p95 | Model calls per run |
-|---|---|---|---|---|---|
-| Login | Screenshot agent: a screenshot + one Muse Spark vision call per step, pixel clicks | 5/5 | 16.1 s | 18.4 s | 4–5 |
-| Login | **Quiff**: the action table + one Muse Spark text call per step | **5/5** | **15.0 s** | 18.6 s | 4 |
-| Login | **Replay**: the flow Quiff recorded, re-run | **5/5** | **2.2 s** | 4.3 s | **0** |
-| Order form | Screenshot agent | **0/5** | 109.6 s (ran out of steps) | 114.8 s | 25–26 |
-| Order form | **Quiff** | **5/5** | **25.6 s** | 30.3 s | 9 |
-| Order form | **Replay** | **5/5** | **2.4 s** | 2.6 s | **0** |
-
-What it shows:
-- **Login: about the same speed.** With matched settings, Quiff was only 1.07× faster than the screenshot agent (15.0 s vs 16.1 s). The earlier published 1.8× came mostly from the screenshot agent running at the model's default reasoning effort while Quiff ran at minimal.
-- **Order form: the screenshot agent never finished.** In all 5 runs it typed the three text fields and chose "Medium", then kept clicking at about (26, 414), 2–3 px above-left of the 13-px "Extra Cheese" checkbox (which spans x 28–41, y 416–429). The click never landed, so it tried again until it ran out of steps. Quiff acts on the control itself, never on coordinates: 5/5, every field right.
-- **Replay** repeats a task Quiff has done once, with zero model calls: 7× faster than the screenshot agent on the login, and 10.7× faster than Quiff's own first run on the order form.
-
-Caveats:
-- **Two simple tasks on one machine,** and model latency varies with load.
-- **The screenshot agent is our stand-in** built on the same Muse Spark model, not a third-party product. It gets the same typing, key handling, settle-and-retry, effort, token budget and step cap as Quiff. A stronger vision model, or a zoom step, might hit the checkbox.
-- **The first order batch** gave the screenshot agent a 12-step cap against Quiff's 25. It failed the same way (0/5); the order numbers above come from the re-run with equal caps.
-- **Every batch from the day is in [`results/`](results/README.md),** including earlier ones run before the harness was made fair, with what changed in each.
-
-### Task runs (live, Nov 1–2, 2026, dev machine in India)
-
-The best recorded run per task:
-
-| Task | What the model did | Steps | Time | Verdict |
-|---|---|---|---|---|
-| b05 site login | typed credentials, submitted | 3 | 18.7 s | PASS (2 code checks) |
-| b01 Google search | typed the query, pressed Enter | 3 | 13.3 s | PASS (URL check) |
-| b03 Wikipedia fact | went to Wikipedia and answered "1991" (from the model's own knowledge: Quiff doesn't pass page text to the model yet) | 3 | 19.5 s | PASS (answer check) |
-| b04 order form | filled 6 fields in batches, stopped at the approval guard on "Submit order", submitted after approval | 8 | 19.1 s | PASS (3 page checks) |
-| d01 Notepad save (desktop) | typed the document, drove the Save As dialog via a driver skill | 2 | 20.0 s | PASS (file check) |
-| d01 replay | same task, **0 model calls** | 2 | 11.1 s | PASS |
-
-### Task suite status
-
-The suite (`tasks/tasks.toml`) has 20 tasks with automatic checks, split into `dev` and `hidden`.
-
-| Task | Split | Passed with Muse Spark? |
-|---|---|---|
-| b01 Google search · b03 Wikipedia fact · b04 order form · b05 login | dev | yes |
-| d01 Notepad save · d02 new folder · d03 rename (needed a correction round) | dev | yes |
-| b06 dropdown · b07 checkboxes · b08 GitHub license · b09 PyPI version | hidden | yes |
-| b10 download | hidden | no: the model doesn't pick the download skill |
-| b02 · d04–d10 | dev/hidden | not yet attempted with the model |
-
-Honest caveats:
-- **"Passed" means passed at least once.** These are development runs, and many failures came before the fixes that made the tasks pass; some tasks (b08, d01) took many attempts. Run `spikes/regression.py` to measure reliability on the current code.
-- **b07 and b08 are hidden tasks that passed only after general engine fixes found while running them.** No task-specific tuning was added, but they aren't unseen results. b10 has since gained guidance for its exact case, so a future b10 pass won't count as unseen either.
-- **The b09 check** accepts any version-shaped answer.
-- **Google rate-limits headless automation;** run browser tasks with `--headed`.
-
-## Try it
-
-Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), Windows, and Chrome (plus Node.js for `--show`).
+<br>
 
 ```sh
 uv sync
@@ -175,7 +147,7 @@ uv run quiff run b04 --interactive --headed   # the approval guard asks before "
 uv run quiff run d01                   # records a replayable flow (close Notepad first)
 uv run quiff run d01 --replay          # then replay it: no model calls
 uv run quiff run b05 --model open      # the same run on Muse Spark Open (MUSE_OPEN_* in .env)
-uv run python spikes/race_local.py --runs 5    # the race: 2 local tasks, both agents on the same settings
+uv run python spikes/race_local.py --runs 5 --modes quiff replay   # first run vs replay, timed
 uv run python spikes/regression.py --runs 3    # re-test the demo tasks on your machine
 uv run python spikes/model_probe.py    # the go/no-go benchmark
 uv run python spikes/cascade_stats.py  # how many steps replay, Muse Spark and the rescuer each took
@@ -183,9 +155,7 @@ uv run python spikes/cascade_stats.py  # how many steps replay, Muse Spark and t
 
 `quiff run` drives a real browser window or app; every step is logged to `runs/` as JSONL.
 
-### Your own task: `quiff do`
-
-Give Quiff any goal in plain words, with where to start. Checks are optional; without them the model's own "done" is the only evidence, and the result says so.
+**Your own task: `quiff do`.** Give Quiff any goal in plain words, with where to start. Checks are optional; without them the model's own "done" is the only evidence, and the result says so.
 
 ```sh
 uv run quiff do "Log in with username tomsmith and password SuperSecretPassword!" \
@@ -198,28 +168,91 @@ uv run quiff do "Write a shopping list with milk and eggs, save it as list.txt" 
 
 A successful run is saved as a flow, so the same command with `--replay` repeats it with zero AI calls. Desktop goals start in a fresh folder, `~/quiff-tasks/do-<id>/`.
 
-### Teach once, replay with new data: `quiff batch`
-
-The same chore for every row of a spreadsheet. Row 1 goes to the model: Muse Spark plans and decides each step, and the approval guard asks before anything irreversible. The flow it recorded becomes a template (every value that came from row 1 is replaced by its column), and rows 2..N replay it with their own values and **zero AI calls**, each row checked by code.
+**Teach once, replay with new data: `quiff batch`.** The same chore for every row of a spreadsheet. Row 1 goes to the model: Muse Spark plans and decides each step, and the approval guard asks before anything irreversible. The flow it recorded becomes a template (every value that came from row 1 is replaced by its column), and rows 2..N replay it with their own values and **zero AI calls**, each row checked by code.
 
 ```sh
 uv run python spikes/serve_forms.py      # a local order form at http://127.0.0.1:8765/order (keep it running)
 uv run quiff batch "Fill in the pizza order form: name {name}, phone {phone}, email {email}, size {size}, toppings cheese and onion, comments '{comments}'. Then submit it." \
     --url http://127.0.0.1:8765/order --data tasks/batch/orders.csv \
     --check-text '"custname": "{name}"' --check-text '"size": "{size}"' --interactive --show
-uv run python spikes/batch_race.py --rows 10   # the same 10 rows: screenshot agent vs quiff batch
+uv run python spikes/batch_race.py --rows 10 --modes quiff   # time quiff batch on the 10 sample orders
 ```
 
 At an approval, answer `a` to approve the same action for every row. A row whose replay fails before anything was approved falls back to the model; a row that was submitted but fails its checks is reported and never retried, so nothing is submitted twice. `--replay` runs every row from the saved template.
 
-**The batch race** (`spikes/batch_race.py --rows 10`, Nov 3, 2026): the same 10 orders, the same model, reasoning effort (minimal), token budget (8,192) and step cap (25) for both agents; one headless Chrome per agent; approvals granted automatically and counted; Quiff's teacher runs without the planning call, like the screenshot agent. Data: [`results/batch-race-2026-11-03-211217.json`](results/batch-race-2026-11-03-211217.json).
+</details>
 
-| Agent | Rows passed | Total time | AI calls |
-|---|---|---|---|
-| Screenshot agent | 0/10 | 1,008 s, out of steps on every row | 252 |
-| **`quiff batch`** | **10/10** | **32.6 s** (row 1: 25.9 s; rows 2–10: about 0.7 s each) | **9**, all on row 1 |
+<details>
+<summary><b>How it fits together</b></summary>
 
-The screenshot agent ran out of its 25 steps on every row, as in the order-form race above, where its traces show it clicking 2–3 px beside the "Extra Cheese" checkbox. It never finished a row, so there is no fair speed-up to quote: the point is 10 of 10 done with 9 AI calls, against none done with 252.
+<br>
+
+```mermaid
+flowchart LR
+  goal["Your goal<br/>or a CSV row"] --> plan["Plan<br/>Muse Spark, high"]
+  plan --> observe
+  subgraph fast["The loop, every step"]
+    observe["Observe<br/>UI Automation · DevTools<br/>numbered action table"] --> decide["Decide<br/>Muse Spark, minimal<br/>one JSON-schema call"]
+    decide --> guard{"Irreversible?"}
+    guard -->|"no"| act["Act<br/>accessibility actions<br/>DevTools input"]
+    guard -->|"yes: you approve"| act
+    act --> verify["Verify<br/>plain-code checks"]
+    verify -->|"next step"| observe
+  end
+  decide -.->|"unsure or stuck"| rescue["Rescuer<br/>Muse Spark, high"]
+  rescue -.-> act
+  verify -->|"done"| saved[("Saved flow<br/>or batch template")]
+  saved -->|"next time · next row"| replay["Replay<br/>zero AI calls"]
+  replay --> act
+```
+
+| Stage | What it does |
+|---|---|
+| **Plan** | Muse Spark (high reasoning) writes a short plan of subgoals once, at the start. Every decision sees the plan as context; the loop doesn't step through the subgoals one by one. |
+| **Observe** | The screen becomes one numbered action table, e.g. `[12] button "Save" · enabled`, read from Windows UI Automation or Chrome's DevTools protocol. No screenshots. |
+| **Decide** | Muse Spark (minimal reasoning) answers one JSON-schema request per step: which action, which row, did the last step work, is the subgoal done. |
+| **Act** | Accessibility patterns (`Invoke`, `SetValue`) on Windows, DevTools input in Chrome, keyboard input as the fallback. Shared flows (Save As, menus, downloads) are driver skills. Irreversible actions wait for a human (see Safety). |
+| **Verify** | Plain code checks the result; the model's "done" is never trusted. When the model says done but the task's checks disagree, the failed checks are fed back for up to two correction rounds. |
+| **Learn** | Every step is logged (JSONL). A successful run is saved as a flow. |
+| **Replay** | `quiff run <task> --replay` re-runs a saved flow with **no model calls**, re-finding each control by role and name, so it survives layout shifts. `quiff batch` turns a flow into a template and replays it for every row of a CSV. (Per-step recall inside model runs is next.) |
+
+When the minimal decider is unsure, Muse Spark at high reasoning (the rescuer) takes the step. That happens on low confidence, two failed actions in a row, two failed decider calls, too many waits, or a detected loop. It's capped at 3 rescues per run, and a second loop stops the run honestly instead of burning time.
+
+| Folder | What's inside |
+|---|---|
+| [`src/quiff/observe/`](src/quiff/observe/) | The screen as a numbered action table: Chrome over the DevTools protocol, Windows over UI Automation |
+| [`src/quiff/`](src/quiff/) | The loop, acting and the approval guard, checks, replay, batch, the CLI |
+| [`src/quiff/models/`](src/quiff/models/) | Muse Spark and Muse Spark Open clients and the decision schema |
+| [`src/quiff/skills/`](src/quiff/skills/) | Per-app guidance: Chrome, Notepad, File Explorer |
+| [`overlay/`](overlay/) | The on-screen overlay (Electron) |
+| [`tasks/`](tasks/) | The 20-task suite and the batch sample data |
+| [`spikes/`](spikes/) | The timing, probe, regression and stats scripts |
+| [`results/`](results/README.md) | Every published measurement, with the commit that produced it |
+
+</details>
+
+<details>
+<summary><b>Safety by construction</b></summary>
+
+<br>
+
+- **Approval guard.** Actions that look irreversible wait for a human's yes (`--interactive`); without an approver, the run stops and says why. The guard covers:
+  - clicking Submit / Send / Pay / Delete / Place your order / Proceed to payment / Move to Trash / Cancel subscription / Unsubscribe / Merge pull request and the like (whole words, on buttons, links and menu items, so "Postal code", "PayPal" or a dialog's plain "Cancel" don't trigger it);
+  - Enter or Space that would trigger such a control, judged by what holds keyboard focus (Enter in a form whose submit button is "Submit order" asks first);
+  - Ctrl+Enter, Alt+S and Shift+Delete, plus Delete on desktop items;
+  - every download;
+  - any Save As that would overwrite a file or write outside the task's folder, and "Yes" in a "Confirm Save As" dialog, however the save was started.
+- **What the guard can't see.** It judges controls by their names, so an irreversible button with an unusual name can still get through. Navigating to a URL isn't checked, and a save typed by hand into a Save dialog is only caught at the overwrite confirmation, not when it writes a new file outside the task folder.
+- **Only its own windows.** Quiff follows the window it launched and the dialogs that window owns. It refuses to start while Notepad is open, never closes or edits the user's windows, and never sends a keystroke unless its own window is in front.
+- **Its own browser.** Every run uses a temporary Chrome profile on a port Chrome picks itself, never an existing browser.
+- **Secrets.** Text typed into password-like fields is redacted in step logs. Recorded flows keep real values so replay works; they stay local in the gitignored `runs/` folder.
+
+</details>
+
+<details>
+<summary><b>Watch it work: the overlay</b></summary>
+
+<br>
 
 `--show` puts Quiff's overlay on screen:
 - **Status pill:** says what Quiff is doing. Its four states are working, unsure (the rescuer took over), approval needed, and your turn.
@@ -230,7 +263,12 @@ The screenshot agent ran out of its 25 steps on every row, as in the order-form 
 
 The overlay is a small Electron app in `overlay/`. `npm run demo` there previews it without running a task.
 
-## What's real vs what's next
+</details>
+
+<details>
+<summary><b>What works today, what's next</b></summary>
+
+<br>
 
 **Working today:**
 - the browser and Windows loops with Muse Spark;
@@ -240,7 +278,7 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 - the approval guard and ownership-based window safety;
 - rescue escalation with a budget, and correction rounds from failed checks;
 - JSONL step logs, plus flow recording and zero-model-call replay;
-- the race and regression harnesses, with provenance;
+- timing and regression harnesses, with provenance;
 - the on-screen overlay (`--show`): status pill, ghost cursor, highlight box, approval edge glow.
 
 **Next:**
@@ -251,20 +289,25 @@ The overlay is a small Electron app in `overlay/`. `npm run demo` there previews
 - a first Muse Spark Open run;
 - a decision model trained on the step logs.
 
+</details>
+
+<details>
+<summary><b>Tests</b></summary>
+
+<br>
+
+```bash
+uv run pytest -q    # Windows-only desktop tests skip themselves on other systems
+```
+
+CI runs the tests, the CLI and the build on Windows on every push.
+
+</details>
+
 ## Built during the hackathon
 
-Everything substantive after the `pre-hackathon` tag was built during the Meta Global AI Developer Hackathon (Oct 27 – Nov 4, 2026): the entire engine, the model layer, the safety layer, the task suite, the probe, and the race and regression harnesses with their results in `results/`. Compare: [pre-hackathon...main](https://github.com/CodeNeuron58/quiff/compare/pre-hackathon...main). Before the tag there was only the package skeleton, the README, and the license.
-
-## Credits
-
-Quiff's code is its own, written during the hackathon, but several ideas come from open-source computer-use work, and the comments say where:
-
-- [Cua](https://github.com/trycua/cua): Chrome launch flags that keep background tabs from being suspended, driver skills and per-app skill files, and counting progress in the runner instead of asking the model (Cua issue #4313).
-- [Browser Use](https://github.com/browser-use/browser-use) and [jev-ra](https://github.com/brnyxx/jev-ra) (an MIT-licensed tool that lets coding agents drive Chrome over the DevTools protocol): sending a mouse move before each click, reading input back after typing, and fresh-page checks before acting.
-- The OSWorld-Human study (MLSys 2026): the measurement that large-model calls take 90–97% of computer-use agents' time.
+Everything substantive after the `pre-hackathon` tag was built during the Meta Global AI Developer Hackathon (Oct 27 – Nov 4, 2026): the entire engine, the model layer, the safety layer, the task suite, the probe, and the timing and regression harnesses with their results in `results/`. Compare: [pre-hackathon...main](https://github.com/CodeNeuron58/quiff/compare/pre-hackathon...main). Before the tag there was only the package skeleton, the README, and the license.
 
 ## License
 
-Licensed under the [Apache License, 2.0](LICENSE). See [NOTICE](NOTICE) for the copyright notice.
-
-The license covers the code, not the name. "Quiff" may not be used as the name of forks or other products (Section 6 of the license).
+[Apache 2.0](LICENSE). It covers the code, not the name: the license doesn't grant use of the Quiff name (section 6, Trademarks), so forks can't call themselves Quiff.
