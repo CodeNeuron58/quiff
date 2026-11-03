@@ -40,8 +40,30 @@ class Show:
     def clear_target(self) -> None:
         """Hide the highlight box (the cursor stays where it is)."""
 
+    def meter(self, text: str, calls: int) -> None:
+        """Who decided the current step and how long it took ('Muse Spark (minimal) ·
+        1.4 s', 'Replay · no AI call'), plus the run's AI calls so far."""
+
     def close(self) -> None:
         """Remove everything from the screen."""
+
+
+def meter_text(decision: Decision) -> str:
+    """What made this step's decision and how long it took, said plainly."""
+    brain = decision.brain or ""
+    if brain == "Replay":
+        return "Replay"  # the meter adds "· 0 AI calls": replay never asks a model
+    if "rescued" in (decision.note or ""):
+        brain = "Rescuer: " + (brain or "frontier model")
+    if decision.ms:
+        seconds = f"{decision.ms / 1000:.1f} s"
+        brain = f"{brain} · {seconds}" if brain else seconds
+    return brain
+
+
+def _basename(path: str) -> str:
+    """The file name from a Windows or POSIX path, on any OS."""
+    return re.split(r"[\\/]", path.rstrip("\\/"))[-1] if path else ""
 
 
 def _short(text: str, limit: int = 32) -> str:
@@ -70,7 +92,7 @@ def describe(decision: Decision, row: ActionRow | None) -> tuple[str, str]:
                         for part in combo_label(decision.values).split("+"))
         return f"Pressing {keys}", f"Press · {keys}"
     if decision.action == "save_as":
-        return f"Saving as {Path(values).name}", f"Save · {Path(values).name}"
+        return f"Saving as {_basename(values)}", f"Save · {_basename(values)}"
     if decision.action == "navigate":
         return f"Opening {_short(values, 48)}", "Open"
     if decision.action == "download":

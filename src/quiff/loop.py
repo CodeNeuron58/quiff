@@ -19,7 +19,7 @@ from .decide import Decision, Decider
 from .learn import StepLogger
 from .observe.browser import BrowserObserver
 from .observe.table import ActionTable
-from .show import Show, describe, target_rect
+from .show import Show, describe, meter_text, target_rect
 from .verify import LoopDetector
 
 MAX_STEPS = 25
@@ -165,6 +165,7 @@ class FastLoop:
                     decision = Decision(action="done", subgoal_done=False, confidence=0.0,
                                         note=f"rescuer failed: {exc}")
             force_rescue = False
+            self.show.meter(meter_text(decision), self._model_calls)
 
             if decision.action == "wait":
                 # The decider expects a screen that isn't there yet (a dialog

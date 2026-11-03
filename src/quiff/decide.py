@@ -44,6 +44,13 @@ class Decision:
 
     note: str = ""
 
+    brain: str = ""
+    """What made this decision, for people watching: "Muse Spark (minimal)",
+    "Replay" (no model call), "Script". Empty when unknown."""
+
+    ms: int | None = None
+    """How long the decision took, when a model made it."""
+
 
 class Decider(Protocol):
     async def decide(
@@ -92,7 +99,8 @@ class MatchDecider:
         self._next += 1
         if step.action in ("done", "answer", "press", "save_as"):  # no row to find
             return Decision(
-                action=step.action, values=step.values, answer=step.answer, subgoal_done=True
+                action=step.action, values=step.values, answer=step.answer, subgoal_done=True,
+                brain="Script",
             )
         for row in table.rows:
             if (step.role_contains.lower() in row.role.lower()
@@ -104,6 +112,7 @@ class MatchDecider:
                     last_step_ok=True,
                     subgoal_done=False,
                     note=f"match {step.role_contains!r}/{step.name_contains!r}",
+                    brain="Script",
                 )
         if step.optional:
             return Decision(action="done", subgoal_done=True,

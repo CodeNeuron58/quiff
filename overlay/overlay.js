@@ -26,6 +26,8 @@ const config = {
   edgeGlow: true,
 };
 let pillState = null;
+let meterText = ''; // who decided the step + AI calls so far; '' shows the brand
+let uiScale = 1;    // --show-scale: bigger pill, chips and cursor for screen recordings
 let waitSince = 0;
 let visible = false; // the cursor is out of the pill
 let pos = { x: 0, y: 0 };
@@ -35,24 +37,34 @@ const later = (ms, fn) => timers.push(setTimeout(fn, ms));
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
 const tr = (ms, ease) => `left ${ms}ms ${ease}, top ${ms}ms ${ease}, opacity ${ms}ms ${ease}, transform ${ms}ms ${ease}`;
 const reflow = (el) => void el.getBoundingClientRect();
-const pillOrigin = () => ({ x: window.innerWidth / 2, y: 34 }); // the pill's centre
+const pillOrigin = () => ({ x: window.innerWidth / 2, y: 12 + 22 * uiScale }); // the pill's centre
 
 // ------------------------------------------------------------------ pill
 
 function pillWidth(kind, line) {
   measure.label.textContent = NAMES[kind];
   measure.line.textContent = line;
+  measure.brand.textContent = meterText || 'Quiff';
+  measure.brand.classList.toggle('meter', Boolean(meterText));
   const w = (el) => el.getBoundingClientRect().width;
-  // padding 12 | chip (10 + dot 7 + gap 8 + label + 10) | gap 12 | line | gap 12 | Quiff | padding 14
+  // padding 12 | chip (10 + dot 7 + gap 8 + label + 10) | gap 12 | line | gap 12 | brand/meter | padding 14
   const natural = 12 + (10 + 7 + 8 + w(measure.label) + 10) + 12 + w(measure.line) + 12 + w(measure.brand) + 14 + 2;
   const approval = kind === 'approval';
-  const width = Math.max(approval ? 660 : 380, Math.min(approval ? 780 : 740, natural));
-  return Math.round(Math.min(width, window.innerWidth - 32));
+  const cap = meterText ? 960 : (approval ? 780 : 740);
+  const width = Math.max(approval ? 660 : 380, Math.min(cap, natural));
+  return Math.round(Math.min(width, (window.innerWidth - 32) / uiScale));
 }
 
 function setState(msg) {
   const kind = NAMES[msg.kind] ? msg.kind : 'working';
   const line = msg.line || '';
+  if (kind === 'yourturn' && meterText) {
+    // the ending line carries the run's totals; the brand comes back
+    meterText = '';
+    const brand = $('.brand', pill);
+    brand.textContent = 'Quiff';
+    brand.classList.remove('meter');
+  }
   const previous = pillState;
   pillState = kind;
   pill.dataset.state = kind;
@@ -79,6 +91,17 @@ function setState(msg) {
   }
 }
 
+// The meter: what decided this step and how long it took, and the AI calls so far.
+function setMeter(msg) {
+  const calls = Number(msg.calls) || 0;
+  const count = `${calls} AI call${calls === 1 ? '' : 's'}`;
+  meterText = msg.text ? `${msg.text} · ${count}` : count;
+  const brand = $('.brand', pill);
+  brand.textContent = meterText;
+  brand.classList.add('meter');
+  if (pillState) pill.style.width = pillWidth(pillState, $('.line', pill).textContent) + 'px';
+}
+
 function tickWait() {
   if (pillState !== 'approval') return;
   const s = Math.floor((Date.now() - waitSince) / 1000);
@@ -93,7 +116,7 @@ function place(point, { transition = 'none', opacity, scale } = {}) {
   cursor.style.left = point.x + 'px';
   cursor.style.top = point.y + 'px';
   if (opacity !== undefined) cursor.style.opacity = opacity;
-  if (scale !== undefined) cursor.style.transform = `scale(${scale})`;
+  if (scale !== undefined) cursor.style.transform = `scale(${scale * uiScale})`;
   pos = { x: point.x, y: point.y };
 }
 
@@ -226,9 +249,9 @@ function demo() {
   const send = at(0.29, 0.70, 76, 30);
   const steps = [
     [1800, () => setState({ kind: 'working', line: 'Reading the screen' })],
-    [2400, () => { setState({ kind: 'working', line: 'Clicking "Attach"' }); target({ box: attach, chip: 'Click · Attach', kind: 'working', ripple: true }); }],
+    [2400, () => { setState({ kind: 'working', line: 'Clicking "Attach"' }); setMeter({ text: 'Muse Spark (minimal) · 1.4 s', calls: 2 }); target({ box: attach, chip: 'Click · Attach', kind: 'working', ripple: true }); }],
     [2400, () => { setState({ kind: 'working', line: 'Typing into "To"' }); target({ box: to, chip: 'Type · "accounts"', kind: 'working', ripple: true }); }],
-    [3900, () => setState({ kind: 'unsure', line: 'Rescuer took over · low confidence' })],
+    [3900, () => { setState({ kind: 'unsure', line: 'Rescuer took over · low confidence' }); setMeter({ text: 'Rescuer: Muse Spark (high) · 5.8 s', calls: 4 }); }],
     [2000, () => { setState({ kind: 'working', line: 'Clicking "accounts@halden.co"' }); target({ box: row, chip: 'Click · accounts@halden.co', kind: 'working', ripple: true }); }],
     [5200, () => { setState({ kind: 'approval', line: 'Clicking "Send"', guard: 'click on Send (commits an action)' }); target({ box: send, chip: 'Needs approval · Send', kind: 'approval', ripple: false }); }],
     [1400, () => { setState({ kind: 'working', line: 'Clicking "Send"' }); target({ box: send, chip: 'Click · Send', kind: 'working', ripple: true }); }],
@@ -251,6 +274,10 @@ window.quiff.onCommand((msg) => {
     if (msg.t === 'config') {
       if (typeof msg.reducedMotion === 'boolean') config.reducedMotion = msg.reducedMotion;
       if (typeof msg.edgeGlow === 'boolean') config.edgeGlow = msg.edgeGlow;
+      if (typeof msg.scale === 'number' && msg.scale > 0) {
+        uiScale = Math.min(2.5, Math.max(0.75, msg.scale));
+        root.style.setProperty('--ui-scale', String(uiScale));
+      }
       document.body.classList.toggle('reduced', config.reducedMotion);
     } else if (msg.t === 'state') {
       setState(msg);
@@ -258,6 +285,8 @@ window.quiff.onCommand((msg) => {
       target(msg);
     } else if (msg.t === 'clear') {
       hideHighlight();
+    } else if (msg.t === 'meter') {
+      setMeter(msg);
     } else if (msg.t === 'demo') {
       demo();
     }
@@ -271,4 +300,11 @@ Promise.all([
   document.fonts.load('400 15px "IBM Plex Sans"'),
   document.fonts.load('600 14px "IBM Plex Sans"'),
   document.fonts.load('400 14px "IBM Plex Mono"'),
+  document.fonts.load('500 13px "IBM Plex Mono"'), // the meter's font
 ]).catch(() => {}).finally(() => window.quiff.ready());
+
+// A font that finishes loading after the pill was sized changes its text's
+// width: size the pill again, or its sentence ends up cut short.
+document.fonts.addEventListener('loadingdone', () => {
+  if (pillState) pill.style.width = pillWidth(pillState, $('.line', pill).textContent) + 'px';
+});

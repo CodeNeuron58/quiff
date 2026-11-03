@@ -129,6 +129,7 @@ uv run quiff tasks                     # list the 20-task suite
 uv run quiff run b05 --headed          # the model logs into a public test site
 cd overlay && npm install && cd ..     # once, for --show
 uv run quiff run b05 --show            # watch it: status pill and ghost cursor
+uv run quiff run b05 --show --show-scale 1.5   # bigger overlay, for screen recordings
 uv run quiff run b04 --interactive --headed   # the approval guard asks before "Submit order"
 uv run quiff run d01                   # records a replayable flow (close Notepad first)
 uv run quiff run d01 --replay          # then replay it: no model calls
@@ -142,6 +143,8 @@ uv run python spikes/model_probe.py    # the go/no-go benchmark
 `--show` puts Quiff's overlay on screen:
 - **Status pill:** says what Quiff is doing. Its four states are working, unsure (the rescuer took over), approval needed, and your turn.
 - **Ghost cursor:** glides to each target and highlights it just before Quiff acts.
+- **Meter:** the pill's right side says what decided each step and how long it took (`Muse Spark (minimal) · 1.4 s`, `Rescuer: Muse Spark (high) · 5.8 s`, `Replay`), with the run's AI calls so far. The last line gives the totals, e.g. `Done · all checks pass · 4 AI calls · 15.8 s` (the plan counts as a call).
+- **Size:** `--show-scale 1.5` makes the pill, chips and cursor bigger for screen recordings.
 - **Safe to watch:** the real mouse never moves, and typed passwords are never shown. The overlay is click-through, never takes focus, and screen recorders capture it.
 
 The overlay is a small Electron app in `overlay/`. `npm run demo` there previews it without running a task.

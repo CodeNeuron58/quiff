@@ -135,7 +135,8 @@ class ReplayDecider:
         step = self.flow.steps[self._next]
         if step.action in ("press", "save_as"):
             self._next += 1
-            return Decision(action=step.action, values=step.values, note="replayed")
+            return Decision(action=step.action, values=step.values, note="replayed",
+                            brain="Replay")
         row = _find(table, step)
         if row is None:
             return Decision(action="wait", note=f"waiting for {step.role}/{step.name[:24]!r}")
@@ -148,6 +149,7 @@ class ReplayDecider:
             subgoal_done=False,
             confidence=1.0,
             note=f"replayed {step.role}/{step.name[:24]!r}",
+            brain="Replay",
         )
 
 

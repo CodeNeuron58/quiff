@@ -31,6 +31,8 @@ def main() -> None:
     run.add_argument("--show", action="store_true",
                      help="show the on-screen overlay (status pill, ghost cursor); "
                           "opens Chrome headed. Needs `npm install` in overlay/ once")
+    run.add_argument("--show-scale", type=float, default=1.0,
+                     help="overlay size, e.g. 1.5 for screen recordings (default 1.0)")
 
     observe = commands.add_parser("observe", help="print the action table for a URL")
     observe.add_argument("url")
@@ -78,7 +80,7 @@ async def _dispatch(args: argparse.Namespace) -> None:
             from quiff.show.overlay import Overlay, OverlayError
 
             try:
-                show = Overlay()
+                show = Overlay(scale=args.show_scale)
             except OverlayError as exc:
                 raise SystemExit(f"quiff: {exc}")
             args.headed = True  # the overlay points at a window you can see
@@ -124,6 +126,7 @@ async def _dispatch(args: argparse.Namespace) -> None:
                 return answer.strip().lower().startswith("y")
 
         planned = None
+        plan_calls = 0
         if not args.replay and not args.scripted:
             if show is not None:
                 show.state("working", "Planning the task")
@@ -134,6 +137,10 @@ async def _dispatch(args: argparse.Namespace) -> None:
                 print("plan     " + " -> ".join(planned[:4]) + (" -> ..." if len(planned) > 4 else ""))
             except Exception as exc:
                 print(f"plan     (unavailable: {exc})")
+            plan_calls = 1  # the plan request was made, whether or not it succeeded
+            if show is not None:
+                show.calls_offset = plan_calls
+                show.meter("Plan: Muse Spark (high)", 0)
 
         run = None
         try:
@@ -144,7 +151,7 @@ async def _dispatch(args: argparse.Namespace) -> None:
                                  show=show)
         finally:
             if show is not None:
-                show.state("yourturn", _ending_line(run))
+                show.state("yourturn", _ending_line(run, plan_calls))
                 await asyncio.sleep(3.5)  # let the ending be seen before the window closes
             await observer.stop()
             if show is not None:
@@ -153,6 +160,8 @@ async def _dispatch(args: argparse.Namespace) -> None:
         mode = ("replay" if args.replay else "scripted") if args.scripted or args.replay else "model"
         print(f"mode     {mode}")
         print(f"steps    {run.loop.steps} · {run.loop.elapsed_s}s · {run.loop.stop_reason}")
+        print(f"calls    {run.loop.model_calls + plan_calls} AI calls"
+              f"{' (incl. the plan)' if plan_calls else ''} · {run.loop.rescues} rescues")
         if run.loop.answer:
             print(f"answer   {run.loop.answer}")
         for check in run.checks:
@@ -165,12 +174,15 @@ async def _dispatch(args: argparse.Namespace) -> None:
         return
 
 
-def _ending_line(run) -> str:
-    """The pill's last words: what happened, now that control is back with you."""
+def _ending_line(run, extra_calls: int = 0) -> str:
+    """The pill's last words: what happened, now that control is back with you,
+    and what it cost (AI calls, including the plan, and seconds)."""
     if run is None:
         return "Run stopped · you have control"
+    calls = run.loop.model_calls + extra_calls
+    cost = f" · {calls} AI call{'' if calls == 1 else 's'} · {run.loop.elapsed_s:.1f} s"
     if run.success:
-        return "Done · all checks pass"
+        return "Done · all checks pass" + cost
     reason = run.loop.stop_reason
     if reason.startswith("needs approval"):
         return "Stopped · not approved · you have control"

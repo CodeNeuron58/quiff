@@ -11,6 +11,7 @@
   /* set per state by overlay.js */
   --label: oklch(0.78 0.10 245);
   --halo: #4C8DF6;
+  --ui-scale: 1; /* quiff run --show-scale */
 }
 
 html, body {
@@ -37,7 +38,8 @@ html, body {
   position: absolute;
   top: 12px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--ui-scale));
+  transform-origin: top center;
   width: 380px;
   border-radius: 10px;
   overflow: hidden;
@@ -100,6 +102,15 @@ html, body {
   font-weight: 600;
   letter-spacing: .01em;
   color: var(--faint);
+}
+/* the meter replaces the brand once a step is decided: who decided, time, AI calls */
+#pill .brand.meter,
+#measure .brand.meter {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted);
 }
 
 #pill .approval {
@@ -194,7 +205,7 @@ html, body {
   background: var(--chip, #2D6AD1);
   color: var(--chip-fg, #ffffff);
   box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-scale));
   font-weight: 600;
 }
 #highlight.below .chip { bottom: auto; top: 100%; margin-bottom: 0; margin-top: 6px; }

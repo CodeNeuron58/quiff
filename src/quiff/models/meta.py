@@ -264,6 +264,19 @@ def decision_prompt(goal: str, subgoal: str, table: ActionTable,
     )
 
 
+def display_name(model_id: str) -> str:
+    """A model id as people say it: 'muse-spark-1.3' -> 'Muse Spark',
+    'meta-models/Muse-Spark-Open-816B-A42B' (or a Modal hostname) -> 'Muse Spark Open'."""
+    lowered = (model_id or "").lower()
+    if "open" in lowered:
+        return "Muse Spark Open"
+    if "glimmer" in lowered:
+        return "Muse Glimmer"
+    if "spark" in lowered:
+        return "Muse Spark"
+    return model_id or "model"
+
+
 class MuseDecider:
     """The real decision model: Muse Spark picks the row, via one structured call.
 
@@ -296,10 +309,12 @@ class MuseDecider:
         )
         action = parsed.get("action", "done")
         row = parsed.get("row")
+        brain = f"{display_name(reply.model)} ({self.effort})"
         if action in ("click", "type", "select"):
             if not isinstance(row, int) or table.by_index(row) is None:
                 return Decision(action="done", subgoal_done=False, confidence=0.0,
-                                note=f"model picked missing row {row!r}")
+                                note=f"model picked missing row {row!r}",
+                                brain=brain, ms=reply.latency_ms)
         values = tuple(str(v) for v in parsed.get("values") or [])
         try:
             confidence = max(0.0, min(1.0, float(parsed.get("confidence") or 0.0)))
@@ -314,4 +329,6 @@ class MuseDecider:
             subgoal_done=parsed.get("subgoal_done"),
             confidence=confidence,
             note=f"{parsed.get('note') or ''} · {reply.model} · {reply.latency_ms} ms".strip(" ·"),
+            brain=brain,
+            ms=reply.latency_ms,
         )

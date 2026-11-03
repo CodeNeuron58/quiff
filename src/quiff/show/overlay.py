@@ -79,7 +79,7 @@ class Overlay(Show):
     active = True
 
     def __init__(self, *, reduced_motion: bool | None = None, edge_glow: bool = True,
-                 timeout: float = 30.0) -> None:
+                 timeout: float = 30.0, scale: float = 1.0) -> None:
         make_dpi_aware()
         app = app_dir()
         exe = electron_exe(app)
@@ -101,7 +101,8 @@ class Overlay(Show):
         self._lock = threading.Lock()
         self._cursor_out = False
         self.reduced_motion = bool(reduced_motion)
-        config: dict = {"t": "config", "edgeGlow": edge_glow}
+        self.calls_offset = 0  # model calls made before the loop started (the plan)
+        config: dict = {"t": "config", "edgeGlow": edge_glow, "scale": float(scale)}
         if reduced_motion is not None:
             config["reducedMotion"] = reduced_motion
         self._send(config)
@@ -152,6 +153,9 @@ class Overlay(Show):
 
     def clear_target(self) -> None:
         self._send({"t": "clear"})
+
+    def meter(self, text: str, calls: int) -> None:
+        self._send({"t": "meter", "text": text, "calls": calls + self.calls_offset})
 
     def close(self) -> None:
         self._send({"t": "close"})

@@ -165,3 +165,89 @@ async def test_the_base_show_costs_nothing():
                                            Decision(action="done", subgoal_done=True)]), None)
     await loop.run("click", start_url="http://x/", subgoal="click")
     assert not any("innerWidth" in str(params) for _, params in observer.cdp.calls)
+
+
+# ------------------------------------------------------------------ the meter
+
+from quiff.show import meter_text  # noqa: E402
+
+
+def test_meter_names_the_model_and_its_time():
+    decision = Decision(action="click", row=1, brain="Muse Spark (minimal)", ms=1432)
+    assert meter_text(decision) == "Muse Spark (minimal) · 1.4 s"
+
+
+def test_meter_says_when_the_rescuer_decided():
+    decision = Decision(action="click", row=1, brain="Muse Spark (high)", ms=5800,
+                        note="unsure · rescued")
+    assert meter_text(decision) == "Rescuer: Muse Spark (high) · 5.8 s"
+
+
+def test_meter_for_replay_needs_no_time():
+    assert meter_text(Decision(action="click", row=1, brain="Replay")) == "Replay"
+
+
+class MeteredShow(RecordingShow):
+    def meter(self, text, calls):
+        self.events.append(("meter", text, calls))
+
+
+@pytest.mark.asyncio
+async def test_loop_meters_every_decision_with_the_running_ai_call_count():
+    show = MeteredShow()
+    observer = OnScreenObserver(username_password_rows())
+    decider = FakeDecider([
+        Decision(action="type", row=1, values=("tomsmith",), brain="Muse Spark (minimal)", ms=1400),
+        Decision(action="click", row=3, brain="Muse Spark (minimal)", ms=1600),
+        Decision(action="done", subgoal_done=True, brain="Muse Spark (minimal)", ms=900),
+    ])
+    loop = FastLoop(observer, decider, None, show=show)
+    await loop.run("log in", start_url="http://x/", subgoal="log in")
+    meters = [e for e in show.events if e[0] == "meter"]
+    assert meters == [("meter", "Muse Spark (minimal) · 1.4 s", 1),
+                      ("meter", "Muse Spark (minimal) · 1.6 s", 2),
+                      ("meter", "Muse Spark (minimal) · 0.9 s", 3)]
+
+
+@pytest.mark.asyncio
+async def test_replay_meters_zero_ai_calls():
+    from quiff.recall import Flow, FlowStep, ReplayDecider
+
+    flow = Flow(goal="g", task_id="t", steps=[FlowStep(action="click", role="button",
+                                                       name="Login")])
+    show = MeteredShow()
+    loop = FastLoop(OnScreenObserver(username_password_rows()), ReplayDecider(flow), None,
+                    show=show)
+    await loop.run("log in", start_url="http://x/", subgoal="log in")
+    assert {e[2] for e in show.events if e[0] == "meter"} == {0}
+    assert ("meter", "Replay", 0) in show.events
+
+
+def test_ending_line_reports_ai_calls_and_time():
+    from types import SimpleNamespace
+
+    from quiff.cli import _ending_line
+
+    run = SimpleNamespace(success=True, loop=SimpleNamespace(model_calls=3, elapsed_s=15.84,
+                                                             stop_reason="done"))
+    assert _ending_line(run, extra_calls=1) == "Done · all checks pass · 4 AI calls · 15.8 s"
+    replay = SimpleNamespace(success=True, loop=SimpleNamespace(model_calls=0, elapsed_s=2.2,
+                                                                stop_reason="done"))
+    assert _ending_line(replay) == "Done · all checks pass · 0 AI calls · 2.2 s"
+
+
+async def test_muse_decider_tags_its_decisions():
+    from quiff.models.meta import ModelReply, MuseDecider
+    from quiff.observe.table import ActionTable
+
+    class Client:
+        model = "muse-spark-1.3"
+
+        def structured(self, prompt, schema, **kwargs):
+            parsed = {"action": "click", "row": 1, "values": [], "last_step_ok": True,
+                      "subgoal_done": False, "confidence": 0.9}
+            return parsed, ModelReply("{}", 1432, 100, 40, "muse-spark-1.3", "stop")
+
+    table = ActionTable(title="t", rows=(row("button", "Login"),), url="http://x/")
+    decision = await MuseDecider(client=Client()).decide("g", "g", table, [])
+    assert (decision.brain, decision.ms) == ("Muse Spark (minimal)", 1432)
