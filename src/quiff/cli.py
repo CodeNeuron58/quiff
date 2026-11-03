@@ -204,19 +204,16 @@ def _script_for(task) -> list[MatchStep]:
             MatchStep("click", "button", "login"),
         ],
     }
-    # Desktop: d01 — type into Notepad's document, save into the sandbox via the dialog.
+    # Desktop: d01 — type into Notepad's document, then save into the sandbox with
+    # save_as, the same verified primitive the model uses. (Typing a path into the
+    # Save dialog's box doesn't stick on Windows 11: it saves under its own name.)
     if task.app != "chrome":
         from quiff.tasks import sandbox_dir
 
         target = sandbox_dir(task) / "hello.txt"
         return [
             MatchStep("type", "document", "", ("Hello from Quiff",)),
-            MatchStep("press", values=("ctrl+s",)),
-            # The Save-As dialog becomes the app's front window; the loop reads it next.
-            MatchStep("type", "edit", "file name", (str(target),)),
-            MatchStep("press", values=("Enter",)),
-            # Only appears when the target file already exists.
-            MatchStep("click", "button", "yes", optional=True),
+            MatchStep("save_as", values=(str(target),)),
         ]
     for task_id, steps in scripts.items():
         if task.id == task_id or task.id.startswith(task_id):

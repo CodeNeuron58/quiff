@@ -90,7 +90,7 @@ class MatchDecider:
             return Decision(action="done", subgoal_done=True, note="script finished")
         step = self.steps[self._next]
         self._next += 1
-        if step.action in ("done", "answer", "press"):
+        if step.action in ("done", "answer", "press", "save_as"):  # no row to find
             return Decision(
                 action=step.action, values=step.values, answer=step.answer, subgoal_done=True
             )
