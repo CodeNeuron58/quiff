@@ -1,0 +1,193 @@
+{
+  "provenance": {
+    "commit": "270ab9e",
+    "uncommitted_changes": false,
+    "measured_at": "2026-11-03 06:13:39 +0530"
+  },
+  "runs_per_mode": 5,
+  "results": [
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 54.89,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true
+    },
+    {
+      "mode": "slow",
+      "success": false,
+      "elapsed_s": 376.96,
+      "model_calls": 14,
+      "steps": 10,
+      "stop_reason": "api error: ReadTimeout: The read operation timed out",
+      "said_done": false,
+      "api_errors": 4,
+      "checks_pass": false
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 32.98,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 25.95,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true
+    },
+    {
+      "mode": "slow",
+      "success": true,
+      "elapsed_s": 50.91,
+      "model_calls": 5,
+      "steps": 4,
+      "stop_reason": "model said done",
+      "said_done": true,
+      "api_errors": 0,
+      "checks_pass": true
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 14.39,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked, now on /secure indicating successful login \u00b7 muse-spark-1.3 \u00b7 3704 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 18.8,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login button clicked OK after entering credentials; assuming login complete \u00b7 muse-spark-1.3 \u00b7 6749 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 20.34,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked, assuming secure area reached \u00b7 muse-spark-1.3 \u00b7 6867 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 14.95,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Login clicked OK and page is Secure Area \u00b7 muse-spark-1.3 \u00b7 4350 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "quiff",
+      "success": true,
+      "elapsed_s": 16.73,
+      "model_calls": 4,
+      "steps": 3,
+      "stop_reason": "Navigated to /secure after Login click, login appears successful \u00b7 muse-spark-1.3 \u00b7 5951 ms",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 1.83,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 1.85,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.01,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 2.04,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    },
+    {
+      "mode": "replay",
+      "success": true,
+      "elapsed_s": 1.92,
+      "model_calls": 0,
+      "steps": 3,
+      "stop_reason": "flow finished",
+      "rescues": 0
+    }
+  ],
+  "summary": {
+    "slow": {
+      "runs": 5,
+      "successes": 4,
+      "median_s": 50.91,
+      "model_calls": [
+        5,
+        14,
+        4,
+        4,
+        5
+      ]
+    },
+    "quiff": {
+      "runs": 5,
+      "successes": 5,
+      "median_s": 16.73,
+      "model_calls": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    },
+    "replay": {
+      "runs": 5,
+      "successes": 5,
+      "median_s": 1.92,
+      "model_calls": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}
