@@ -178,3 +178,11 @@ def test_browser_observer_picks_its_own_port_by_default():
     fixed = BrowserObserver(headless=True, chrome_path="chrome.exe", port=9333)
     assert auto._auto_port and auto.port == 0       # Chrome chooses; never 9222 by default
     assert not fixed._auto_port and fixed.port == 9333
+
+
+def test_chrome_window_size_uses_the_comma_form_chrome_understands():
+    # regression: "--window-size=1280x900" was silently ignored (754x480 viewport)
+    from quiff.observe.browser import BrowserObserver
+
+    flags = BrowserObserver(headless=True, chrome_path="chrome.exe").launch_flags()
+    assert "--window-size=1280,900" in flags

@@ -498,6 +498,12 @@ class BrowserObserver:
         if self._process:
             return
         self._user_data_dir = tempfile.mkdtemp(prefix="quiff-chrome-")
+        self._process = subprocess.Popen(
+            self.launch_flags(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+
+    def launch_flags(self) -> list[str]:
+        """The full Chrome command line for this observer."""
         flags = [
             self._chrome,
             f"--remote-debugging-port={self.port}",
@@ -512,15 +518,15 @@ class BrowserObserver:
             "--disable-renderer-backgrounding",
             "--proxy-bypass-list=<-loopback>",  # local test targets skip the system proxy
             "--mute-audio",
-            f"--window-size={self.window_size.replace(',', 'x')}",
+            # Chrome wants "W,H": the old "WxH" spelling was silently ignored,
+            # leaving pages in a 754x480 viewport
+            f"--window-size={self.window_size.replace('x', ',')}",
         ]
         if self.direct:
             flags.append("--no-proxy-server")
         if self.headless:
             flags.append("--headless=new")
-        self._process = subprocess.Popen(
-            flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
+        return flags
 
     async def _wait_for_debugger(self, timeout: float = 20.0) -> None:
         deadline = time.monotonic() + timeout
