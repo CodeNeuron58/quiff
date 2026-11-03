@@ -190,6 +190,7 @@ class FastLoop:
                     continue
 
             if decision.action == "done":
+                self.show.state("working", "Checking the result")
                 if self.verify_after_done is not None and corrected < MAX_CORRECTIONS:
                     passed, feedback = await self.verify_after_done()
                     if passed:
