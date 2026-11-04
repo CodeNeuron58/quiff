@@ -263,3 +263,65 @@ def test_meter_context_goes_in_front():
     assert with_context("Row 5 of 10", "Replay") == "Row 5 of 10 · Replay"
     assert with_context("", "Muse Spark (minimal) · 1.4 s") == "Muse Spark (minimal) · 1.4 s"
     assert with_context("Row 1 of 3", "") == "Row 1 of 3"
+
+
+# ------------------------------------------------- desktop window comes forward
+
+class _FocusRulesUser32:
+    """Windows' focus rules in miniature: SetForegroundWindow from a background
+    process only works while Alt is held (the standard unlock)."""
+
+    def __init__(self, ours, unlockable=True):
+        self.ours, self.unlockable = ours, unlockable
+        self.front, self.alt, self.calls = 99, False, []
+
+    def GetForegroundWindow(self):
+        return self.front
+
+    def IsIconic(self, hwnd):
+        return False
+
+    def ShowWindow(self, hwnd, cmd):
+        self.calls.append(("show", hwnd, cmd))
+
+    def keybd_event(self, vk, scan, flags, extra):
+        self.alt = not (flags & 0x0002)
+        self.calls.append(("alt", self.alt))
+
+    def SetForegroundWindow(self, hwnd):
+        self.calls.append(("front", hwnd, self.alt))
+        if self.alt and self.unlockable:
+            self.front = hwnd
+        return int(self.front == hwnd)
+
+
+@pytest.mark.asyncio
+async def test_desktop_window_is_brought_in_front_for_show_mode(monkeypatch):
+    pytest.importorskip("comtypes", reason="desktop tests need Windows UI Automation")
+    from quiff.observe import desktop as desktop_mod
+
+    fake = _FocusRulesUser32(ours=7)
+    monkeypatch.setattr(desktop_mod, "user32", fake)
+    observer = desktop_mod.DesktopObserver()
+    monkeypatch.setattr(observer, "current_hwnd", lambda: 7)
+    assert await observer.bring_to_front() is True
+    assert ("front", 7, True) in fake.calls      # asked while Alt was held
+    assert fake.calls[-1] == ("alt", False)       # and Alt was released after
+
+
+@pytest.mark.asyncio
+async def test_desktop_window_that_cannot_come_forward_says_so(monkeypatch):
+    pytest.importorskip("comtypes", reason="desktop tests need Windows UI Automation")
+    from quiff.observe import desktop as desktop_mod
+
+    fake = _FocusRulesUser32(ours=7, unlockable=False)
+    monkeypatch.setattr(desktop_mod, "user32", fake)
+    monkeypatch.setattr(desktop_mod.asyncio, "sleep", _no_sleep)
+    observer = desktop_mod.DesktopObserver()
+    monkeypatch.setattr(observer, "current_hwnd", lambda: 7)
+    assert await observer.bring_to_front() is False
+    assert not fake.alt                            # never leaves Alt held down
+
+
+async def _no_sleep(_seconds):
+    return None

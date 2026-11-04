@@ -250,6 +250,25 @@ class DesktopObserver:
         except DesktopError:
             return None
 
+    async def bring_to_front(self) -> bool:
+        """Show mode: put the app's window in front, so the overlay points at a
+        window you can see. A window started from a background process (the app,
+        a terminal) opens behind the user's windows, and Windows refuses a plain
+        SetForegroundWindow; the Alt-tap unlock the acting stage uses gets it in."""
+        hwnd = self.current_hwnd()
+        if not hwnd:
+            return False
+        for _ in range(3):
+            if user32.GetForegroundWindow() == hwnd:
+                return True
+            if user32.IsIconic(hwnd):
+                user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+            user32.keybd_event(0x12, 0, 0, 0)  # Alt down
+            user32.SetForegroundWindow(hwnd)
+            user32.keybd_event(0x12, 0, 0x0002, 0)  # Alt up
+            await asyncio.sleep(0.2)
+        return user32.GetForegroundWindow() == hwnd
+
     async def stop(self) -> None:
         """Close the windows Quiff launched, discard unsaved test text, and clean up.
 

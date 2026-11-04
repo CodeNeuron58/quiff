@@ -114,7 +114,7 @@ class FastLoop:
         if self.show.active and hasattr(self.observer, "bring_to_front"):
             # the overlay must point at a window you can see
             if not await self.observer.bring_to_front():
-                self.show.state("unsure", "Chrome is behind another window · click it to watch")
+                self.show.state("unsure", "Quiff's window is behind another one · click it to watch")
 
         stop_reason = "max steps reached"
         success = False
