@@ -32,9 +32,7 @@
   <img src="docs/demo.gif" alt="quiff batch typing ten purchase orders from a spreadsheet into a demo supplier portal: Muse Spark does row 1, the approval guard asks before Submit order, rows 2 to 10 replay with zero AI calls" width="760"><br>
   <sub>Ten purchase orders from a spreadsheet into a demo supplier portal: Muse Spark learns row 1 (sped up 4×), the guard asks before <i>Submit order</i>, rows 2–10 replay at real speed with zero AI calls</sub>
 </p>
-<!-- When the demo video is up, add this line under the GIF:
-<p align="center"><sub>▶ <a href="https://youtu.be/VIDEO_ID">Watch the 3-minute demo</a></sub></p>
--->
+<p align="center"><sub>▶ <a href="https://youtu.be/I6cExCyKC2A">Watch the 3-minute demo</a></sub></p>
 
 ## What is Quiff?
 
